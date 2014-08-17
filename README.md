@@ -16,3 +16,12 @@ Dials allows for more than just a simple yes or no when your features are execut
 
 
 Currently Dials is in its infancy, so many areas are currently limited in scope, but with plans to expand. 
+
+Some current ideas are:
+*   More filter options
+*   More dialable filters
+*   Better dial configuration and killswitch functionality
+*   Providing a dropwizard service implementation for distrubuted systems
+*   A simple interface for feature creation
+*   Additional context recorders
+*   Additional data stores
