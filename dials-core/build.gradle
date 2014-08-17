@@ -1,0 +1,9 @@
+dependencies {
+    compile 'com.typesafe.akka:akka-actor_2.10:2.3.5'
+    compile 'joda-time:joda-time:2.4'
+    compile 'org.slf4j:slf4j-api:1.7.7'
+    compile 'org.springframework:spring-jdbc:4.0.6.RELEASE'
+    compile 'org.reflections:reflections:0.9.9-RC1'
+    testCompile 'com.typesafe.akka:akka-testkit_2.10:2.3.5'
+}
+
