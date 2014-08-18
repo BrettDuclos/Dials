@@ -11,7 +11,7 @@ public class CountTuple {
     public CountTuple(int executions, int errors) {
         this.executions = executions;
 
-        rateOfSuccess = new BigDecimal(((executions - errors) / (executions * 1.0)) * DECIMAL_ADJUSTMENT);
+        rateOfSuccess = new BigDecimal(((executions - errors) / ((executions == 0 ? 1 : executions) * 1.0)) * DECIMAL_ADJUSTMENT);
     }
 
     public int getExecutions() {

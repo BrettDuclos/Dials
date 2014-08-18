@@ -1,6 +1,8 @@
 package dials.datastore;
 
 import dials.filter.FeatureFilterDataBean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
@@ -8,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 public class JdbcDataStore implements DataStore {
+    private Logger logger = LoggerFactory.getLogger(JdbcDataStore.class);
 
     private DataSource dataSource;
 
@@ -84,6 +87,15 @@ public class JdbcDataStore implements DataStore {
 
         jdbcTemplate.update("update dials_feature_execution set errors = (errors + 1) "
                 + "where feature_id = (select feature_id from dials_feature where feature_name = ?)", featureName);
+
+        CountTuple tuple = getExecutionCountTuple(featureName);
+
+        int rowCount = jdbcTemplate.update("update dials_feature set is_enabled = 0 where feature_name = ? and killswitch_threshold > ?",
+                featureName, tuple.getRateOfSuccess());
+
+        if (rowCount > 0) {
+            logger.warn("Killswitch Threshold reached for feature " + featureName + "; Feature has been disabled.");
+        }
     }
 
     @Override
