@@ -1,14 +1,14 @@
 package dials;
 
+import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
 import dials.datastore.DataStore;
 import dials.filter.DynamicDataFilter;
 import dials.filter.FeatureFilterDataBean;
 import dials.filter.FilterData;
-import dials.messages.AbandonMessage;
-import dials.messages.FilterRetrievalRequestMessage;
-import dials.messages.FilterRetrievalResultMessage;
+import dials.filter.StaticDataFilter;
+import dials.messages.*;
 
 import java.util.Map;
 
@@ -53,12 +53,17 @@ public class FilterRetriever extends UntypedActor {
             if (filterClass != null) {
                 resultMessage.getExecutionContext().addExecutionStep("Detected Filter - " + filterClass.getSimpleName());
 
-                if (DynamicDataFilter.class.isAssignableFrom(filterClass)) {
-                    resultMessage.addFilter(context().actorOf(Props.create(
-                            getClassForFilter(filter.getKey()), data, message.getDynamicData(), resultMessage)));
-                } else {
-                    resultMessage.addFilter(context().actorOf(Props.create(getClassForFilter(filter.getKey()), data, resultMessage)));
+                ActorRef filterActor = context().actorOf(Props.create(filterClass));
+
+                if (StaticDataFilter.class.isAssignableFrom(filterClass)) {
+                    filterActor.tell(new StaticDataFilterApplicationMessage(data, resultMessage), self());
                 }
+
+                if (DynamicDataFilter.class.isAssignableFrom(filterClass)) {
+                    filterActor.tell(new DynamicDataFilterApplicationMessage(message.getDynamicData(), resultMessage), self());
+                }
+
+                resultMessage.addFilter(filterActor);
             } else {
                 resultMessage.getExecutionContext().addExecutionStep("Detected Unknown Filter - " + filter.getKey());
             }

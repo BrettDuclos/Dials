@@ -1,10 +1,12 @@
 package dials.filter.impl;
 
-import dials.filter.*;
+import dials.filter.FeatureFilter;
+import dials.filter.FilterDataException;
+import dials.filter.FilterDataHelper;
+import dials.filter.StaticDataFilter;
 import dials.messages.ContextualMessage;
+import dials.messages.DataFilterApplicationMessage;
 import org.joda.time.LocalTime;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 
 public class TimeWindowFeatureFilter extends FeatureFilter implements StaticDataFilter {
 
@@ -14,14 +16,8 @@ public class TimeWindowFeatureFilter extends FeatureFilter implements StaticData
     private LocalTime startTime;
     private LocalTime endTime;
 
-    public TimeWindowFeatureFilter(FilterData staticFilterData, ContextualMessage message) {
-        setStaticData(staticFilterData, message);
-    }
-
     @Override
     public boolean filter() {
-        DateTimeFormatter formatter = DateTimeFormat.forPattern("HH:mm");
-
         if (startTime.toDateTimeToday().isBeforeNow() && endTime.toDateTimeToday().isAfterNow()) {
             return true;
         }
@@ -30,8 +26,8 @@ public class TimeWindowFeatureFilter extends FeatureFilter implements StaticData
     }
 
     @Override
-    public void setStaticData(FilterData data, ContextualMessage message) {
-        FilterDataHelper helper = new FilterDataHelper(data);
+    public void applyStaticData(DataFilterApplicationMessage message) {
+        FilterDataHelper helper = new FilterDataHelper(message.getFilterData());
 
         applyRequiredData(message, helper);
     }

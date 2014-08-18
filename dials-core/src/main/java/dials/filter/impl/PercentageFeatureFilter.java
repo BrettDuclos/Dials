@@ -7,6 +7,7 @@ import dials.dial.Dialable;
 import dials.execution.ExecutionContext;
 import dials.filter.*;
 import dials.messages.ContextualMessage;
+import dials.messages.DataFilterApplicationMessage;
 
 import java.util.Random;
 
@@ -16,10 +17,6 @@ public class PercentageFeatureFilter extends FeatureFilter implements StaticData
     private static final int MIN_PERCENTAGE = 0;
 
     private Integer percentage;
-
-    public PercentageFeatureFilter(FilterData staticFilterData, ContextualMessage message) {
-        setStaticData(staticFilterData, message);
-    }
 
     @Override
     public boolean filter() {
@@ -38,10 +35,10 @@ public class PercentageFeatureFilter extends FeatureFilter implements StaticData
     }
 
     @Override
-    public void setStaticData(FilterData data, ContextualMessage message) {
-        FilterDataHelper helper = new FilterDataHelper(data);
+    public void applyStaticData(DataFilterApplicationMessage message) {
+        FilterDataHelper helper = new FilterDataHelper(message.getFilterData());
         if (applyRequiredData(message, helper)) {
-            dial(data, message.getExecutionContext());
+            dial(message.getFilterData(), message.getExecutionContext());
         }
     }
 

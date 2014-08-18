@@ -1,8 +1,8 @@
 package dials.filter;
 
-import dials.messages.ContextualMessage;
+import dials.messages.DataFilterApplicationMessage;
 
 public interface DynamicDataFilter {
 
-    void setDynamicData(FilterData data, ContextualMessage message);
+    void applyDynamicData(DataFilterApplicationMessage message);
 }

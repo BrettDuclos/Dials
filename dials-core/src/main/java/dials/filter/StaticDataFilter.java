@@ -1,8 +1,8 @@
 package dials.filter;
 
-import dials.messages.ContextualMessage;
+import dials.messages.DataFilterApplicationMessage;
 
 public interface StaticDataFilter {
 
-    void setStaticData(FilterData data, ContextualMessage message);
+    void applyStaticData(DataFilterApplicationMessage message);
 }

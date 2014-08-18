@@ -1,10 +1,7 @@
 package dials.filter;
 
 import akka.actor.UntypedActor;
-import dials.messages.AbandonMessage;
-import dials.messages.ContextualMessage;
-import dials.messages.FilterRequestMessage;
-import dials.messages.FilterResultMessage;
+import dials.messages.*;
 
 public abstract class FeatureFilter extends UntypedActor {
 
@@ -20,6 +17,14 @@ public abstract class FeatureFilter extends UntypedActor {
                 requestMessage.getExecutionContext()
                         .addExecutionStep((passedFilter ? "Passed Filter" : "Failed Filter") + " - " + getClass().getSimpleName());
                 sender().tell(new FilterResultMessage(passedFilter, requestMessage), self());
+            }
+        } else if (message instanceof StaticDataFilterApplicationMessage) {
+            if (this instanceof StaticDataFilter) {
+                ((StaticDataFilter) this).applyStaticData((DataFilterApplicationMessage) message);
+            }
+        } else if (message instanceof DynamicDataFilterApplicationMessage) {
+            if (this instanceof DynamicDataFilter) {
+                ((DynamicDataFilter) this).applyDynamicData((DataFilterApplicationMessage) message);
             }
         }
     }

@@ -1,7 +1,11 @@
 package dials.filter.impl;
 
-import dials.filter.*;
+import dials.filter.DynamicDataFilter;
+import dials.filter.DynamicFilterDataConstants;
+import dials.filter.FilterDataException;
+import dials.filter.FilterDataHelper;
 import dials.messages.ContextualMessage;
+import dials.messages.DataFilterApplicationMessage;
 
 import java.util.Random;
 
@@ -9,19 +13,14 @@ public class SeededPercentageFeatureFilter extends PercentageFeatureFilter imple
 
     private Long seed;
 
-    public SeededPercentageFeatureFilter(FilterData staticFilterData, FilterData dynamicFilterData, ContextualMessage message) {
-        super(staticFilterData, message);
-        setDynamicData(dynamicFilterData, message);
-    }
-
     @Override
     protected Random getRandom() {
         return new Random(seed);
     }
 
     @Override
-    public void setDynamicData(FilterData data, ContextualMessage message) {
-        FilterDataHelper helper = new FilterDataHelper(data);
+    public void applyDynamicData(DataFilterApplicationMessage message) {
+        FilterDataHelper helper = new FilterDataHelper(message.getFilterData());
         applyRequiredData(message, helper);
     }
 

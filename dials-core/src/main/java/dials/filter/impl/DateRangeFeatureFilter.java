@@ -1,7 +1,11 @@
 package dials.filter.impl;
 
-import dials.filter.*;
+import dials.filter.FeatureFilter;
+import dials.filter.FilterDataException;
+import dials.filter.FilterDataHelper;
+import dials.filter.StaticDataFilter;
 import dials.messages.ContextualMessage;
+import dials.messages.DataFilterApplicationMessage;
 import org.joda.time.DateTime;
 
 public class DateRangeFeatureFilter extends FeatureFilter implements StaticDataFilter {
@@ -11,10 +15,6 @@ public class DateRangeFeatureFilter extends FeatureFilter implements StaticDataF
 
     private DateTime startDate;
     private DateTime endDate;
-
-    public DateRangeFeatureFilter(FilterData data, ContextualMessage message) {
-        setStaticData(data, message);
-    }
 
     @Override
     public boolean filter() {
@@ -28,8 +28,8 @@ public class DateRangeFeatureFilter extends FeatureFilter implements StaticDataF
     }
 
     @Override
-    public void setStaticData(FilterData data, ContextualMessage message) {
-        FilterDataHelper helper = new FilterDataHelper(data);
+    public void applyStaticData(DataFilterApplicationMessage message) {
+        FilterDataHelper helper = new FilterDataHelper(message.getFilterData());
 
         applyRequiredData(message, helper);
         applyOptionalData(message, helper);

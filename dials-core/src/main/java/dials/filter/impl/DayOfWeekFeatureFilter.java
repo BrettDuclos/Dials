@@ -1,7 +1,11 @@
 package dials.filter.impl;
 
-import dials.filter.*;
+import dials.filter.FeatureFilter;
+import dials.filter.FilterDataException;
+import dials.filter.FilterDataHelper;
+import dials.filter.StaticDataFilter;
 import dials.messages.ContextualMessage;
+import dials.messages.DataFilterApplicationMessage;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeConstants;
 
@@ -13,10 +17,6 @@ public class DayOfWeekFeatureFilter extends FeatureFilter implements StaticDataF
     public static final String DAYS_OF_WEEK = "DaysOfWeek";
 
     private String[] daysOfWeek;
-
-    public DayOfWeekFeatureFilter(FilterData staticFilterData, ContextualMessage message) {
-        setStaticData(staticFilterData, message);
-    }
 
     @Override
     public boolean filter() {
@@ -32,8 +32,8 @@ public class DayOfWeekFeatureFilter extends FeatureFilter implements StaticDataF
     }
 
     @Override
-    public void setStaticData(FilterData data, ContextualMessage message) {
-        FilterDataHelper helper = new FilterDataHelper(data);
+    public void applyStaticData(DataFilterApplicationMessage message) {
+        FilterDataHelper helper = new FilterDataHelper(message.getFilterData());
         applyRequiredData(message, helper);
     }
 

@@ -6,6 +6,7 @@ import akka.testkit.TestActorRef
 import dials.execution.ExecutionContext
 import dials.filter.FilterData
 import dials.messages.ContextualMessage
+import dials.messages.StaticDataFilterApplicationMessage
 import org.joda.time.DateTimeConstants
 import org.joda.time.DateTime
 import spock.lang.Specification
@@ -26,7 +27,8 @@ class DayOfWeekFeatureFilterSpec extends Specification {
         setup:
         FilterData staticData = new FilterData();
         staticData.addDataObject(DayOfWeekFeatureFilter.DAYS_OF_WEEK, days)
-        TestActorRef<DayOfWeekFeatureFilter> actorRef = TestActorRef.create(system, Props.create(DayOfWeekFeatureFilter.class, staticData, message))
+        TestActorRef<DayOfWeekFeatureFilter> actorRef = TestActorRef.create(system, Props.create(DayOfWeekFeatureFilter.class))
+        actorRef.underlyingActor().applyStaticData(new StaticDataFilterApplicationMessage(staticData, message))
 
         expect:
         actorRef.underlyingActor().abandoned == expectedResult
@@ -59,7 +61,8 @@ class DayOfWeekFeatureFilterSpec extends Specification {
         setup:
         FilterData staticData = new FilterData();
         staticData.addDataObject(DayOfWeekFeatureFilter.DAYS_OF_WEEK, days)
-        TestActorRef<DayOfWeekFeatureFilter> actorRef = TestActorRef.create(system, Props.create(DayOfWeekFeatureFilter.class, staticData, message))
+        TestActorRef<DayOfWeekFeatureFilter> actorRef = TestActorRef.create(system, Props.create(DayOfWeekFeatureFilter.class))
+        actorRef.underlyingActor().applyStaticData(new StaticDataFilterApplicationMessage(staticData, message))
 
         expect:
         actorRef.underlyingActor().filter() == expectedResult
