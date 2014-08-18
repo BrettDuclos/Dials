@@ -3,4 +3,8 @@ env:
   global:
   - TERM=dumb
 install: true
+
+before_install:
+ - chmod +x gradlew
+
 script: ./gradlew build
