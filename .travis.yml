@@ -3,6 +3,4 @@ env:
   global:
   - TERM=dumb
 
-before_script: chmod +x ./gradlew
-
 script: ./gradlew build
