@@ -22,6 +22,16 @@ public class JdbcDataStore implements DataStore {
     }
 
     @Override
+    public boolean isDataStoreAccessible() {
+        try {
+            new JdbcTemplate(dataSource).queryForObject("select 1", Integer.class);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    @Override
     public FeatureFilterDataBean getFiltersForFeature(String featureName) {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
@@ -95,8 +105,9 @@ public class JdbcDataStore implements DataStore {
         CountTuple tuple = getExecutionCountTuple(featureName);
 
         if (tuple.getExecutions() >= MINIMUM_EXECUTION_COUNT) {
-            int rowCount = jdbcTemplate.update("update dials_feature set is_enabled = 0 where feature_name = ? and killswitch_threshold > ?",
-                    featureName, tuple.getRateOfSuccess());
+            int rowCount = jdbcTemplate.update("update dials_feature set is_enabled = 0 "
+                            + "where feature_name = ? and killswitch_threshold > ?", featureName, tuple.getRateOfSuccess()
+            );
 
             if (rowCount > 0) {
                 logger.warn("Killswitch Threshold reached for feature " + featureName + "; Feature has been disabled.");
