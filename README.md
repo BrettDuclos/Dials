@@ -22,7 +22,6 @@ Currently Dials is in its infancy, so many areas are currently limited in scope,
 Some current ideas are:
 *   More filter options
 *   More dialable filters
-*   Better dial configuration and killswitch functionality
 *   Providing a dropwizard service implementation for distrubuted systems
 *   A simple interface for feature creation
 *   Additional context recorders
