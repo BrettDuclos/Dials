@@ -1,0 +1,18 @@
+database:
+    driverClass:
+    url:
+    user:
+    password:
+
+logging:
+    appenders:
+      - type: file
+        threshold: INFO
+        currentLogFilename: ./logs/dials.log
+        archivedLogFilenamePattern: ./logs/dials-%d.log
+        archivedFileCount: 10
+        timeZone: UTC
+
+      - type: console
+        threshold: WARN
+        target: stderr

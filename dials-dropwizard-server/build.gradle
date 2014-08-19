@@ -1,0 +1,40 @@
+apply plugin: 'com.github.johnrengelman.shadow'
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath "com.github.jengelman.gradle.plugins:shadow:1.0.3"
+    }
+}
+
+dependencies {
+    compile project(':dials-core')
+    compile project(':dials-dropwizard-api')
+    compile 'io.dropwizard:dropwizard-core:0.7.0'
+    compile 'io.dropwizard:dropwizard-jdbi:0.7.0'
+    compile 'com.h2database:h2:1.4.181'
+}
+
+build.dependsOn shadowJar
+
+shadowJar {
+    baseName = 'dials-dropwizard-server'
+    classifier = ''
+    mergeServiceFiles()
+}
+
+jar {
+    manifest {
+        attributes "Main-Class": "dials.dropwizard.server.DialsApplication"
+    }
+}
+
+artifacts {
+    archives(file("${buildDir}/libs/dials-dropwizard-server-shadow-${version}.jar")) {
+        name "dials-dropwizard-server"
+        classifier "shadow"
+        builtBy shadowJar
+    }
+}
