@@ -94,11 +94,13 @@ public class JdbcDataStore implements DataStore {
 
         CountTuple tuple = getExecutionCountTuple(featureName);
 
-        int rowCount = jdbcTemplate.update("update dials_feature set is_enabled = 0 where feature_name = ? and killswitch_threshold > ?",
-                featureName, tuple.getRateOfSuccess());
+        if (tuple.getExecutions() >= MINIMUM_EXECUTION_COUNT) {
+            int rowCount = jdbcTemplate.update("update dials_feature set is_enabled = 0 where feature_name = ? and killswitch_threshold > ?",
+                    featureName, tuple.getRateOfSuccess());
 
-        if (rowCount > 0) {
-            logger.warn("Killswitch Threshold reached for feature " + featureName + "; Feature has been disabled.");
+            if (rowCount > 0) {
+                logger.warn("Killswitch Threshold reached for feature " + featureName + "; Feature has been disabled.");
+            }
         }
     }
 

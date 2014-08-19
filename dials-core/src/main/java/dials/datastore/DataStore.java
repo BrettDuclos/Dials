@@ -6,6 +6,8 @@ import dials.filter.FeatureFilterDataBean;
 
 public interface DataStore {
 
+    static int MINIMUM_EXECUTION_COUNT = 50;
+
     /**
      * Validate the existence of a given feature.
      */
