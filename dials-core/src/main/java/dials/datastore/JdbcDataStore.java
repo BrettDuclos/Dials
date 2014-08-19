@@ -40,6 +40,7 @@ public class JdbcDataStore implements DataStore {
         return dataBean;
     }
 
+    @Override
     public boolean doesFeatureExist(String featureName) {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
@@ -117,11 +118,11 @@ public class JdbcDataStore implements DataStore {
     }
 
     @Override
-    public void updateStaticData(Integer featureFilterId, String dial, String newValue) {
+    public void updateStaticData(Integer featureFilterId, String key, String newValue) {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
         jdbcTemplate.update("update dials_feature_filter_static_data set data_value = ? where lower(data_key) = lower(?)"
-                + " and feature_filter_id = ?", newValue, dial, featureFilterId);
+                + " and feature_filter_id = ?", newValue, key, featureFilterId);
     }
 
     @Override

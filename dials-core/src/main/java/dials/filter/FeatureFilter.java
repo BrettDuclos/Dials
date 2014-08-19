@@ -47,6 +47,9 @@ public abstract class FeatureFilter extends UntypedActor {
         abandoned = true;
     }
 
+    /**
+     * Apply the given filter.
+     */
     public abstract boolean filter();
 
 
