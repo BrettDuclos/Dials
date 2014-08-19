@@ -1,8 +1,11 @@
 package dials.datastore;
 
+import dials.dial.Dial;
+import dials.filter.FeatureFilter;
 import dials.filter.FeatureFilterDataBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
@@ -114,11 +117,37 @@ public class JdbcDataStore implements DataStore {
     }
 
     @Override
-    public void updateStaticData(String featureName, String dial, String newValue) {
+    public void updateStaticData(Integer featureFilterId, String dial, String newValue) {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
-        jdbcTemplate.update("update dials_feature_filter_static_data set data_value = ? where data_key = ? and feature_filter_id = (select "
-                + "feature_filter_id from dials_feature_filter dff join dials_feature df on dff.feature_id = df.feature_id "
-                + "where feature_name = ?)", newValue, dial, featureName);
+        jdbcTemplate.update("update dials_feature_filter_static_data set data_value = ? where lower(data_key) = lower(?)"
+                + " and feature_filter_id = ?", newValue, dial, featureFilterId);
+    }
+
+    @Override
+    public Dial getFilterDial(String featureName, FeatureFilter filter) {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+
+        String filterName = filter.getClass().getSimpleName().replace("FeatureFilter", "");
+
+        List<Dial> dials = jdbcTemplate.query("select * from dials_feature_filter_dial dffd "
+                        + "join dials_feature_filter dff on dffd.feature_filter_id = dff.feature_filter_id "
+                        + "join dials_feature df on dff.feature_id = df.feature_id "
+                        + "where feature_name = ? and lower(filter_name) = lower(?)", new Object[]{featureName, filterName},
+                BeanPropertyRowMapper.newInstance(Dial.class)
+        );
+
+        if (dials == null || dials.isEmpty()) {
+            return null;
+        } else {
+            return dials.get(0);
+        }
+    }
+
+    @Override
+    public void registerDialAttempt(Integer featureFilterId) {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+
+        jdbcTemplate.update("update dials_feature_filter_dial set attempts = (attempts + 1) where feature_filter_id = ?", featureFilterId);
     }
 }

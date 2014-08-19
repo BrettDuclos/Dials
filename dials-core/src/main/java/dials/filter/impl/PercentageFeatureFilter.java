@@ -1,11 +1,14 @@
 package dials.filter.impl;
 
 import dials.Dials;
-import dials.dial.DialConstants;
+import dials.dial.Dial;
 import dials.dial.DialHelper;
 import dials.dial.Dialable;
 import dials.execution.ExecutionContext;
-import dials.filter.*;
+import dials.filter.FeatureFilter;
+import dials.filter.FilterDataException;
+import dials.filter.FilterDataHelper;
+import dials.filter.StaticDataFilter;
 import dials.messages.ContextualMessage;
 import dials.messages.DataFilterApplicationMessage;
 
@@ -38,7 +41,7 @@ public class PercentageFeatureFilter extends FeatureFilter implements StaticData
     public void applyStaticData(DataFilterApplicationMessage message) {
         FilterDataHelper helper = new FilterDataHelper(message.getFilterData());
         if (applyRequiredData(message, helper)) {
-            dial(message.getFilterData(), message.getExecutionContext());
+            dial(message.getExecutionContext());
         }
     }
 
@@ -55,34 +58,36 @@ public class PercentageFeatureFilter extends FeatureFilter implements StaticData
     }
 
     @Override
-    public void dial(FilterData data, ExecutionContext executionContext) {
-        DialHelper helper = new DialHelper();
-        String dialPattern = helper.getDialPattern(data, executionContext);
+    public void dial(ExecutionContext executionContext) {
+        Dial dial = Dials.getRegisteredDataStore().getFilterDial(executionContext.getFeatureName(), this);
+        DialHelper helper = new DialHelper(dial);
 
-        if (dialPattern.equals("")) {
-            return;
+        String dialPattern = helper.getDialPattern(executionContext);
+
+        Integer dialAmount = consumeDialPattern(dialPattern);
+
+        if (dialAmount != null) {
+            executionContext.addExecutionStep("Dial performed on " + getClass().getSimpleName() + " " + dialPattern);
+
+            if (dialAmount > MIN_PERCENTAGE && percentage + dialAmount >= MAX_PERCENTAGE) {
+                percentage = MAX_PERCENTAGE;
+            } else if (dialAmount < MIN_PERCENTAGE && percentage - dialAmount <= MIN_PERCENTAGE) {
+                percentage = MIN_PERCENTAGE;
+            } else {
+                percentage += dialAmount;
+            }
+
+            Dials.getRegisteredDataStore().updateStaticData(dial.getFeatureFilterId(), PERCENTAGE, percentage.toString());
+            Dials.getRegisteredDataStore().registerDialAttempt(dial.getFeatureFilterId());
         }
+    }
 
-        int dialAmount;
-
+    @Override
+    public Integer consumeDialPattern(String pattern) {
         try {
-            dialAmount = Integer.parseInt(dialPattern);
+            return Integer.parseInt(pattern);
         } catch (NumberFormatException e) {
-            return;
+            return null;
         }
-
-        executionContext.addExecutionStep("Dial performed on " + getClass().getName() + " " + dialPattern);
-
-        if (dialAmount > MIN_PERCENTAGE && percentage + dialAmount >= MAX_PERCENTAGE) {
-            percentage = MAX_PERCENTAGE;
-        } else if (dialAmount < MIN_PERCENTAGE && percentage - dialAmount <= MIN_PERCENTAGE) {
-            percentage = MIN_PERCENTAGE;
-        } else {
-            percentage += dialAmount;
-        }
-
-        Dials.getRegisteredDataStore().updateStaticData(executionContext.getFeatureName(), PERCENTAGE, percentage.toString());
-        Dials.getRegisteredDataStore().updateStaticData(executionContext.getFeatureName(), DialConstants.DIAL_CHANGE_COUNT,
-                String.valueOf(Integer.parseInt((String) data.getDataObjects().get(DialConstants.DIAL_CHANGE_COUNT)) + 1));
     }
 }

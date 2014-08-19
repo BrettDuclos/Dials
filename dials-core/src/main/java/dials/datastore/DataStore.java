@@ -1,5 +1,7 @@
 package dials.datastore;
 
+import dials.dial.Dial;
+import dials.filter.FeatureFilter;
 import dials.filter.FeatureFilterDataBean;
 
 public interface DataStore {
@@ -16,5 +18,9 @@ public interface DataStore {
 
     CountTuple getExecutionCountTuple(String featureName);
 
-    void updateStaticData(String featureName, String dial, String newValue);
+    void updateStaticData(Integer featureFilterId, String dial, String newValue);
+
+    Dial getFilterDial(String featureName, FeatureFilter filter);
+
+    void registerDialAttempt(Integer featureFilterId);
 }

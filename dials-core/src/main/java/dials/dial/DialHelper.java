@@ -4,84 +4,63 @@ import dials.Dials;
 import dials.datastore.CountTuple;
 import dials.datastore.DataStore;
 import dials.execution.ExecutionContext;
-import dials.filter.FilterData;
-import dials.filter.FilterDataException;
-import dials.filter.FilterDataHelper;
 
 import java.math.BigDecimal;
 
 public class DialHelper {
 
-    public String getDialPattern(FilterData data, ExecutionContext executionContext) {
+    private Dial dial;
 
-        FilterDataHelper helper = new FilterDataHelper(data);
+    public DialHelper(Dial dial) {
+        this.dial = dial;
+    }
 
-        CountTuple tuple = getCountTuple(helper, executionContext);
+    public String getDialPattern(ExecutionContext executionContext) {
+        if (dial != null) {
+            CountTuple tuple = getCountTuple(dial, executionContext);
 
-        if (tuple != null) {
-            String dialIncreaseResult = attemptDialIncrease(helper, tuple, executionContext);
+            if (tuple != null) {
+                String dialIncreaseResult = attemptDialIncrease(dial, tuple, executionContext);
 
-            if (dialIncreaseResult.equals("")) {
-                return attemptDialDecrease(helper, tuple, executionContext);
-            } else {
-                return dialIncreaseResult;
+                if (dialIncreaseResult.equals("")) {
+                    return attemptDialDecrease(dial, tuple, executionContext);
+                } else {
+                    return dialIncreaseResult;
+                }
             }
         }
 
         return "";
     }
 
-    private CountTuple getCountTuple(FilterDataHelper helper, ExecutionContext executionContext) {
+    private CountTuple getCountTuple(Dial dial, ExecutionContext executionContext) {
         DataStore dataStore = Dials.getRegisteredDataStore();
-
-        int frequency;
-
-        try {
-            frequency = helper.getData(DialConstants.DIAL_FREQUENCY, Integer.class);
-        } catch (FilterDataException e) {
-            return null;
-        }
-
-        int changeCount;
-
-        try {
-            changeCount = helper.getData(DialConstants.DIAL_CHANGE_COUNT, Integer.class);
-        } catch (FilterDataException e) {
-            changeCount = 1;
-        }
 
         CountTuple tuple = dataStore.getExecutionCountTuple(executionContext.getFeatureName());
 
-        if (frequency * changeCount > tuple.getExecutions()) {
+        if (dial.getFrequency() + (dial.getFrequency() * dial.getAttempts()) > tuple.getExecutions()) {
             return null;
         }
 
         return tuple;
     }
 
-    private String attemptDialIncrease(FilterDataHelper helper, CountTuple tuple, ExecutionContext executionContext) {
-        try {
-            BigDecimal increaseThreshold = helper.getData(DialConstants.DIAL_INCREASE_THRESHOLD, BigDecimal.class);
-            if (tuple.getRateOfSuccess().compareTo(increaseThreshold) >= 0) {
-                return helper.getData(DialConstants.DIAL_INCREASE_PATTERN, String.class);
-            }
-        } catch (FilterDataException e) {
-            executionContext.addExecutionStep(e.getMessage());
-            executionContext.addExecutionStep("Unable to handle dial increase. Will attempt dial decrease.");
+    private String attemptDialIncrease(Dial dial, CountTuple tuple, ExecutionContext executionContext) {
+        if (tuple.getRateOfSuccess().compareTo(new BigDecimal(dial.getIncreaseThreshold())) >= 0) {
+            return dial.getIncreasePattern();
         }
+
+        executionContext.addExecutionStep("Filter not eligible for Dial increase.");
+
         return "";
     }
 
-    private String attemptDialDecrease(FilterDataHelper helper, CountTuple tuple, ExecutionContext executionContext) {
-        try {
-            BigDecimal decreaseThreshold = helper.getData(DialConstants.DIAL_DECREASE_THRESHOLD, BigDecimal.class);
-            if (tuple.getRateOfSuccess().compareTo(decreaseThreshold) == -1) {
-                return helper.getData(DialConstants.DIAL_DECREASE_PATTERN, String.class);
-            }
-        } catch (FilterDataException e) {
-            executionContext.addExecutionStep(e.getMessage());
-            executionContext.addExecutionStep("Unable to handle dial decrease.");
+    private String attemptDialDecrease(Dial dial, CountTuple tuple, ExecutionContext executionContext) {
+        if (tuple.getRateOfSuccess().compareTo(new BigDecimal(dial.getDecreaseThreshold())) < 0) {
+            return dial.getDecreasePattern();
         }
+
+        executionContext.addExecutionStep("Filter not eligible for Dial decrease.");
 
         return "";
     }
