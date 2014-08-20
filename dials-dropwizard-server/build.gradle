@@ -14,7 +14,7 @@ dependencies {
     compile project(':dials-dropwizard-api')
     compile 'io.dropwizard:dropwizard-core:0.7.0'
     compile 'io.dropwizard:dropwizard-jdbi:0.7.0'
-    compile 'com.h2database:h2:1.4.181'
+    runtime 'com.h2database:h2:1.4.181'
 }
 
 build.dependsOn shadowJar
