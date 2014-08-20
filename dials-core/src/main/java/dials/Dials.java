@@ -10,6 +10,7 @@ import dials.filter.FilterData;
 import dials.messages.ContextualMessage;
 import dials.messages.FeatureStateRequestMessage;
 import dials.messages.FeatureStateResultMessage;
+import dials.messages.RegisterErrorMessage;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,7 +89,7 @@ public class Dials {
     }
 
     public static void sendError(String featureName) {
-        getRegisteredDataStore().registerError(featureName);
+        getNewDialsDispatcher().tell(new RegisterErrorMessage(featureName), ActorRef.noSender());
     }
 
 

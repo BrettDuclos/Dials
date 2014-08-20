@@ -65,6 +65,14 @@ public class JdbcDataStore implements DataStore {
         return true;
     }
 
+    @Override
+    public void disableFeature(String featureName) {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+
+        jdbcTemplate.update("update dials_feature set is_enabled = 0 where feature_name = ?", featureName);
+        logger.warn("Feature " + featureName + " has been disabled by the system.");
+    }
+
     public boolean isFeatureEnabled(String featureName) {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 

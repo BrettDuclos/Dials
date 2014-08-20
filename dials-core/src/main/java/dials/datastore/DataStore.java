@@ -15,6 +15,8 @@ public interface DataStore {
      */
     boolean doesFeatureExist(String featureName);
 
+    void disableFeature(String featureName);
+
     /**
      * Retrieves a filter definition, including static data, for a given feature.
      */

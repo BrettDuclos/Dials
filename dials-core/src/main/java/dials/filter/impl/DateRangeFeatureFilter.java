@@ -1,5 +1,10 @@
 package dials.filter.impl;
 
+import dials.Dials;
+import dials.dial.Dial;
+import dials.dial.DialHelper;
+import dials.dial.Dialable;
+import dials.execution.ExecutionContext;
 import dials.filter.FeatureFilter;
 import dials.filter.FilterDataException;
 import dials.filter.FilterDataHelper;
@@ -7,8 +12,9 @@ import dials.filter.StaticDataFilter;
 import dials.messages.ContextualMessage;
 import dials.messages.DataFilterApplicationMessage;
 import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
 
-public class DateRangeFeatureFilter extends FeatureFilter implements StaticDataFilter {
+public class DateRangeFeatureFilter extends FeatureFilter implements StaticDataFilter, Dialable {
 
     public static final String START_DATE = "StartDate";
     public static final String END_DATE = "EndDate";
@@ -31,26 +37,77 @@ public class DateRangeFeatureFilter extends FeatureFilter implements StaticDataF
     public void applyStaticData(DataFilterApplicationMessage message) {
         FilterDataHelper helper = new FilterDataHelper(message.getFilterData());
 
-        applyRequiredData(message, helper);
-        applyOptionalData(message, helper);
+        if (applyRequiredData(message, helper) && applyOptionalData(message, helper)) {
+            dial(message.getExecutionContext());
+        }
     }
 
-    private void applyRequiredData(ContextualMessage message, FilterDataHelper helper) {
+    private boolean applyRequiredData(ContextualMessage message, FilterDataHelper helper) {
         try {
             startDate = helper.getData(START_DATE, DateTime.class);
             recordSuccessfulDataApply(message, START_DATE);
+            return true;
         } catch (FilterDataException e) {
             recordUnsuccessfulDataApply(message, START_DATE, true, e.getMessage());
         }
+
+        return false;
     }
 
-    private void applyOptionalData(ContextualMessage message, FilterDataHelper helper) {
+    private boolean applyOptionalData(ContextualMessage message, FilterDataHelper helper) {
         try {
             endDate = helper.getData(END_DATE, DateTime.class);
             recordSuccessfulDataApply(message, END_DATE);
+            return true;
         } catch (FilterDataException e) {
             recordUnsuccessfulDataApply(message, END_DATE, false, e.getMessage());
         }
+
+        return false;
+    }
+
+    @Override
+    public void dial(ExecutionContext executionContext) {
+        Dial dial = Dials.getRegisteredDataStore().getFilterDial(executionContext.getFeatureName(), this);
+        DialHelper helper = new DialHelper(dial);
+
+        String dialPattern = helper.getDialPattern(executionContext);
+        Integer daysToAdd = consumeDialPattern(dialPattern);
+
+        if (daysToAdd != null) {
+            executionContext.addExecutionStep("Dial with pattern " + dialPattern + " performed on " + getClass().getSimpleName());
+
+            DateTime newEndDate = endDate.plusDays(daysToAdd);
+
+            Dials.getRegisteredDataStore().updateStaticData(dial.getFeatureFilterId(), END_DATE,
+                    DateTimeFormat.forPattern("yyyy-MM-dd").print(newEndDate));
+            Dials.getRegisteredDataStore().registerDialAttempt(dial.getFeatureFilterId());
+
+            executionContext.addExecutionStep("Dial successfully executed. New end date is " + endDate);
+
+            if (endDate.isBeforeNow()) {
+                Dials.getRegisteredDataStore().disableFeature(executionContext.getFeatureName());
+                executionContext.addExecutionStep("End date is now surpassed, disabling feature.");
+            }
+        }
+    }
+
+    /**
+     * Dial pattern for DateRangeFeatureFilter is (Integer).
+     * <p/>
+     * Examples:
+     * 1 (Increase Pattern) - Add 1 day to end date.
+     * 5 (Increase Pattern) - Add 5 days to end date.
+     * -2 (Decrease Pattern) - Subtract 2 days from end date.
+     * <p/>
+     * Unit is implied as a day.
+     */
+    @Override
+    public Integer consumeDialPattern(String pattern) {
+        try {
+            return Integer.parseInt(pattern);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }
-

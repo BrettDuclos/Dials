@@ -20,10 +20,10 @@ public class DialHelper {
             CountTuple tuple = getCountTuple(dial, executionContext);
 
             if (tuple != null) {
-                String dialIncreaseResult = attemptDialIncrease(dial, tuple, executionContext);
+                String dialIncreaseResult = determineDialIncreaseEligibility(dial, tuple, executionContext);
 
                 if (dialIncreaseResult.equals("")) {
-                    return attemptDialDecrease(dial, tuple, executionContext);
+                    return determineDialDecreaseEligibility(dial, tuple, executionContext);
                 } else {
                     return dialIncreaseResult;
                 }
@@ -45,7 +45,7 @@ public class DialHelper {
         return tuple;
     }
 
-    private String attemptDialIncrease(Dial dial, CountTuple tuple, ExecutionContext executionContext) {
+    private String determineDialIncreaseEligibility(Dial dial, CountTuple tuple, ExecutionContext executionContext) {
         if (tuple.getRateOfSuccess().compareTo(new BigDecimal(dial.getIncreaseThreshold())) >= 0) {
             return dial.getIncreasePattern();
         }
@@ -55,7 +55,7 @@ public class DialHelper {
         return "";
     }
 
-    private String attemptDialDecrease(Dial dial, CountTuple tuple, ExecutionContext executionContext) {
+    private String determineDialDecreaseEligibility(Dial dial, CountTuple tuple, ExecutionContext executionContext) {
         if (tuple.getRateOfSuccess().compareTo(new BigDecimal(dial.getDecreaseThreshold())) < 0) {
             return dial.getDecreasePattern();
         }

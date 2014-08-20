@@ -63,11 +63,10 @@ public class PercentageFeatureFilter extends FeatureFilter implements StaticData
         DialHelper helper = new DialHelper(dial);
 
         String dialPattern = helper.getDialPattern(executionContext);
-
         Integer dialAmount = consumeDialPattern(dialPattern);
 
         if (dialAmount != null) {
-            executionContext.addExecutionStep("Dial performed on " + getClass().getSimpleName() + " " + dialPattern);
+            executionContext.addExecutionStep("Dial with pattern " + dialPattern + " performed on " + getClass().getSimpleName());
 
             if (dialAmount > MIN_PERCENTAGE && percentage + dialAmount >= MAX_PERCENTAGE) {
                 percentage = MAX_PERCENTAGE;
@@ -79,9 +78,26 @@ public class PercentageFeatureFilter extends FeatureFilter implements StaticData
 
             Dials.getRegisteredDataStore().updateStaticData(dial.getFeatureFilterId(), PERCENTAGE, percentage.toString());
             Dials.getRegisteredDataStore().registerDialAttempt(dial.getFeatureFilterId());
+
+            executionContext.addExecutionStep("Dial successfully executed. New percentage is " + percentage);
+
+            if (percentage == MIN_PERCENTAGE) {
+                Dials.getRegisteredDataStore().disableFeature(executionContext.getFeatureName());
+                executionContext.addExecutionStep("Percentage has reached 0, disabling feature.");
+            }
         }
     }
 
+    /**
+     * Dial pattern for PercentageFeatureFilter is (Integer).
+     * <p/>
+     * Examples:
+     * 1 (Increase Pattern) - Increase percentage by 1
+     * 5 (Increase Pattern) - Increase percentage by 5
+     * -2 (Decrease Pattern) - Decrease percentage by 2
+     * <p/>
+     * Unit is implied as a percentage.
+     */
     @Override
     public Integer consumeDialPattern(String pattern) {
         try {

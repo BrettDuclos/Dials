@@ -1,6 +1,7 @@
 package dials;
 
 import akka.actor.ActorRef;
+import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
 import dials.messages.*;
@@ -19,6 +20,8 @@ public class DialsFacilitator extends UntypedActor {
             handleFilterDispatchResultMessage((FilterDispatchResultMessage) message);
         } else if (message instanceof AbandonMessage) {
             abandon((ContextualMessage) message);
+        } else if (message instanceof RegisterErrorMessage) {
+            registerError((RegisterErrorMessage) message);
         }
     }
 
@@ -57,5 +60,10 @@ public class DialsFacilitator extends UntypedActor {
                 .addExecutionStep("Final Result - " + (state ? "Success" : "Failed"));
         message.getExecutionContext().setExecuted(state);
         context().system().actorSelection("/user/ExecutionRegistry").tell(new ContextualMessage(message), self());
+    }
+
+    private void registerError(RegisterErrorMessage message) {
+        Dials.getRegisteredDataStore().registerError(message.getFeatureName());
+        self().tell(PoisonPill.getInstance(), ActorRef.noSender());
     }
 }
