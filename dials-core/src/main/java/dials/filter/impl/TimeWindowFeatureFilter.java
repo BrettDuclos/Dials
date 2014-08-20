@@ -20,6 +20,8 @@ public class TimeWindowFeatureFilter extends FeatureFilter implements StaticData
     public static final String START_TIME = "StartTime";
     public static final String END_TIME = "EndTime";
 
+    private static final int EXPECTED_PATTERN_LENGTH = 3;
+
     private LocalTime startTime;
     private LocalTime endTime;
 
@@ -111,7 +113,7 @@ public class TimeWindowFeatureFilter extends FeatureFilter implements StaticData
     @Override
     public TimeWindowPattern consumeDialPattern(String pattern) {
         String[] splitPattern = pattern.split(" ");
-        if (splitPattern.length == 3) {
+        if (splitPattern.length == EXPECTED_PATTERN_LENGTH) {
             try {
                 return new TimeWindowPattern(Integer.parseInt(splitPattern[0]), splitPattern[1], splitPattern[2]);
             } catch (NumberFormatException e) {
