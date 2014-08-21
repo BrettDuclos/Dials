@@ -27,7 +27,12 @@ public class DialsResourceImpl implements DialsResource {
     }
 
     @Override
-    public void registerError(String feature) {
-        dialsResource.path(feature).path("error").post();
+    public void registerError(final String feature) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                dialsResource.path(feature).path("error").post();
+            }
+        }).start();
     }
 }

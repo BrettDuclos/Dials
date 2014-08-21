@@ -9,6 +9,7 @@ public class RegisterErrorMessage {
 
     public RegisterErrorMessage(String featureName, DialsSystemConfiguration configuration) {
         this.featureName = featureName;
+        this.configuration = configuration;
     }
 
     public String getFeatureName() {
