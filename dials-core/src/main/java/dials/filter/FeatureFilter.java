@@ -1,6 +1,7 @@
 package dials.filter;
 
 import akka.actor.UntypedActor;
+import dials.dial.Dialable;
 import dials.messages.*;
 
 public abstract class FeatureFilter extends UntypedActor {
@@ -25,6 +26,10 @@ public abstract class FeatureFilter extends UntypedActor {
         } else if (message instanceof DynamicDataFilterApplicationMessage) {
             if (this instanceof DynamicDataFilter) {
                 ((DynamicDataFilter) this).applyDynamicData((DataFilterApplicationMessage) message);
+            }
+        } else if (message instanceof DialableFilterApplicationMessage) {
+            if (this instanceof Dialable) {
+                ((Dialable) this).dial((ContextualMessage) message);
             }
         }
     }

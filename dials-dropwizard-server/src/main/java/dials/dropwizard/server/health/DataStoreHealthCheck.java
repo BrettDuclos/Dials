@@ -1,13 +1,19 @@
 package dials.dropwizard.server.health;
 
 import com.codahale.metrics.health.HealthCheck;
-import dials.Dials;
+import dials.datastore.DataStore;
 
 public class DataStoreHealthCheck extends HealthCheck {
 
+    private DataStore dataStore;
+
+    public DataStoreHealthCheck(DataStore dataStore) {
+        this.dataStore = dataStore;
+    }
+
     @Override
     protected Result check() throws Exception {
-        if (Dials.getRegisteredDataStore().isDataStoreAccessible()) {
+        if (dataStore.isDataStoreAccessible()) {
             return Result.healthy();
         }
 

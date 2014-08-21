@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
 import dials.datastore.DataStore;
+import dials.dial.Dialable;
 import dials.filter.DynamicDataFilter;
 import dials.filter.FeatureFilterDataBean;
 import dials.filter.FilterData;
@@ -19,7 +20,7 @@ public class FilterRetriever extends UntypedActor {
         if (message instanceof FilterRetrievalRequestMessage) {
             FilterRetrievalRequestMessage requestMessage = (FilterRetrievalRequestMessage) message;
 
-            DataStore dataStore = Dials.getRegisteredDataStore();
+            DataStore dataStore = requestMessage.getConfiguration().getDataStore();
 
             if (!dataStore.isFeatureEnabled(requestMessage.getFeatureName())) {
                 requestMessage.getExecutionContext().addExecutionStep("Feature Is Disabled Or Does Not Exist - Abandoning");
@@ -48,7 +49,7 @@ public class FilterRetriever extends UntypedActor {
                 data.addDataObject(filterData.getKey(), filterData.getValue());
             }
 
-            Class filterClass = getClassForFilter(filter.getKey());
+            Class filterClass = getClassForFilter(resultMessage, filter.getKey());
 
             if (filterClass != null) {
                 resultMessage.getExecutionContext().addExecutionStep("Detected Filter - " + filterClass.getSimpleName());
@@ -63,6 +64,10 @@ public class FilterRetriever extends UntypedActor {
                     filterActor.tell(new DynamicDataFilterApplicationMessage(message.getDynamicData(), resultMessage), self());
                 }
 
+                if (Dialable.class.isAssignableFrom(filterClass)) {
+                    filterActor.tell(new DialableFilterApplicationMessage(message), self());
+                }
+
                 resultMessage.addFilter(filterActor);
             } else {
                 resultMessage.getExecutionContext().addExecutionStep("Detected Unknown Filter - " + filter.getKey());
@@ -71,8 +76,8 @@ public class FilterRetriever extends UntypedActor {
         return resultMessage;
     }
 
-    private Class getClassForFilter(String filterName) {
-        return Dials.getAvailableFeatureFilters().get(filterName.toLowerCase());
+    private Class getClassForFilter(ContextualMessage message, String filterName) {
+        return message.getConfiguration().getAvailableFeatureFilters().get(filterName.toLowerCase());
     }
 
 }

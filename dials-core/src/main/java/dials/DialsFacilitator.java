@@ -39,7 +39,8 @@ public class DialsFacilitator extends UntypedActor {
             return;
         }
 
-        context().actorOf(Props.create(FilterDispatcher.class)).tell(new FilterDispatchRequestMessage(message), self());
+        context().actorOf(Props.create(FilterDispatcher.class, message.getConfiguration().isFailFastEnabled()))
+                .tell(new FilterDispatchRequestMessage(message), self());
     }
 
     private void handleFilterDispatchResultMessage(FilterDispatchResultMessage message) {
@@ -63,7 +64,7 @@ public class DialsFacilitator extends UntypedActor {
     }
 
     private void registerError(RegisterErrorMessage message) {
-        Dials.getRegisteredDataStore().registerError(message.getFeatureName());
+        message.getConfiguration().getDataStore().registerError(message.getFeatureName());
         self().tell(PoisonPill.getInstance(), ActorRef.noSender());
     }
 }

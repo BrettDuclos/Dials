@@ -15,10 +15,10 @@ public class FilterDispatcher extends UntypedActor {
     private boolean failed;
     private boolean resultSent;
 
-    public FilterDispatcher() {
+    public FilterDispatcher(boolean failFast) {
         filterCount = 0;
         responseCount = 0;
-        failFast = Dials.isFailFastEnabled();
+        this.failFast = failFast;
     }
 
     @Override

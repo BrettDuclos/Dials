@@ -1,6 +1,6 @@
 package dials.dial;
 
-import dials.execution.ExecutionContext;
+import dials.messages.ContextualMessage;
 
 public interface Dialable {
 
@@ -8,7 +8,7 @@ public interface Dialable {
      * Attempt to dial a filter. The dialing of a feature can include an increase(expansion), decrease(contraction), or both.
      * The dialing of a filter is dependent on how it can logically increase or decrease. Not all Filters may be Dialable.
      */
-    void dial(ExecutionContext executionContext);
+    void dial(ContextualMessage message);
 
     /**
      * Based on the pattern retrieved for a given dial, consume it in a meaningful manner for the given filter.

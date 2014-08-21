@@ -1,10 +1,8 @@
 package dials.filter.impl;
 
-import dials.Dials;
 import dials.dial.Dial;
 import dials.dial.DialHelper;
 import dials.dial.Dialable;
-import dials.execution.ExecutionContext;
 import dials.filter.FeatureFilter;
 import dials.filter.FilterDataException;
 import dials.filter.FilterDataHelper;
@@ -37,57 +35,51 @@ public class DateRangeFeatureFilter extends FeatureFilter implements StaticDataF
     public void applyStaticData(DataFilterApplicationMessage message) {
         FilterDataHelper helper = new FilterDataHelper(message.getFilterData());
 
-        if (applyRequiredData(message, helper) && applyOptionalData(message, helper)) {
-            dial(message.getExecutionContext());
-        }
+        applyRequiredData(message, helper);
+        applyOptionalData(message, helper);
     }
 
-    private boolean applyRequiredData(ContextualMessage message, FilterDataHelper helper) {
+    private void applyRequiredData(ContextualMessage message, FilterDataHelper helper) {
         try {
             startDate = helper.getData(START_DATE, DateTime.class);
             recordSuccessfulDataApply(message, START_DATE);
-            return true;
         } catch (FilterDataException e) {
             recordUnsuccessfulDataApply(message, START_DATE, true, e.getMessage());
         }
-
-        return false;
     }
 
-    private boolean applyOptionalData(ContextualMessage message, FilterDataHelper helper) {
+    private void applyOptionalData(ContextualMessage message, FilterDataHelper helper) {
         try {
             endDate = helper.getData(END_DATE, DateTime.class);
             recordSuccessfulDataApply(message, END_DATE);
-            return true;
         } catch (FilterDataException e) {
             recordUnsuccessfulDataApply(message, END_DATE, false, e.getMessage());
         }
-
-        return false;
     }
 
     @Override
-    public void dial(ExecutionContext executionContext) {
-        Dial dial = Dials.getRegisteredDataStore().getFilterDial(executionContext.getFeatureName(), this);
+    public void dial(ContextualMessage message) {
+        Dial dial = message.getConfiguration().getDataStore().getFilterDial(message.getExecutionContext().getFeatureName(), this);
         DialHelper helper = new DialHelper(dial);
 
-        String dialPattern = helper.getDialPattern(executionContext);
+        String dialPattern = helper.getDialPattern(message);
         Integer daysToAdd = consumeDialPattern(dialPattern);
 
         if (daysToAdd != null) {
-            executionContext.addExecutionStep("Dial with pattern " + dialPattern + " performed on " + getClass().getSimpleName());
+            message.getExecutionContext().addExecutionStep("Dial with pattern " + dialPattern
+                    + " performed on " + getClass().getSimpleName());
 
             DateTime newEndDate = endDate.plusDays(daysToAdd);
 
-            Dials.getRegisteredDataStore().updateStaticData(dial.getFeatureFilterId(), END_DATE,
+            message.getConfiguration().getDataStore().updateStaticData(dial.getFeatureFilterId(), END_DATE,
                     DateTimeFormat.forPattern("yyyy-MM-dd").print(newEndDate));
-            Dials.getRegisteredDataStore().registerDialAttempt(dial.getFeatureFilterId());
+            message.getConfiguration().getDataStore().registerDialAttempt(dial.getFeatureFilterId());
 
-            executionContext.addExecutionStep("Dial successfully executed. New end date is " + endDate);
+            message.getExecutionContext().addExecutionStep("Dial successfully executed. New end date is " + endDate);
 
             if (endDate.isBeforeNow()) {
-                Dials.getRegisteredDataStore().disableFeature(executionContext.getFeatureName());
-                executionContext.addExecutionStep("End date is now surpassed, disabling feature.");
+                message.getConfiguration().getDataStore().disableFeature(message.getExecutionContext().getFeatureName());
+                message.getExecutionContext().addExecutionStep("End date is now surpassed, disabling feature.");
             }
         }
     }

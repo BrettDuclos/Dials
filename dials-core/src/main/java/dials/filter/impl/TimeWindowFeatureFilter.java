@@ -1,10 +1,8 @@
 package dials.filter.impl;
 
-import dials.Dials;
 import dials.dial.Dial;
 import dials.dial.DialHelper;
 import dials.dial.Dialable;
-import dials.execution.ExecutionContext;
 import dials.filter.FeatureFilter;
 import dials.filter.FilterDataException;
 import dials.filter.FilterDataHelper;
@@ -66,34 +64,34 @@ public class TimeWindowFeatureFilter extends FeatureFilter implements StaticData
         if (!success) {
             abandon(message);
         }
-
-        dial(message.getExecutionContext());
     }
 
     @Override
-    public void dial(ExecutionContext executionContext) {
-        Dial dial = Dials.getRegisteredDataStore().getFilterDial(executionContext.getFeatureName(), this);
+    public void dial(ContextualMessage message) {
+        Dial dial = message.getConfiguration().getDataStore().getFilterDial(message.getExecutionContext().getFeatureName(), this);
         DialHelper helper = new DialHelper(dial);
 
-        String dialPattern = helper.getDialPattern(executionContext);
+        String dialPattern = helper.getDialPattern(message);
         TimeWindowPattern timeToAdd = consumeDialPattern(dialPattern);
 
         if (timeToAdd != null) {
-            executionContext.addExecutionStep("Dial with pattern " + dialPattern + " performed on " + getClass().getSimpleName());
+            message.getExecutionContext().addExecutionStep("Dial with pattern " + dialPattern + " performed on "
+                    + getClass().getSimpleName());
 
             calculateNewTimes(timeToAdd);
 
-            Dials.getRegisteredDataStore().updateStaticData(dial.getFeatureFilterId(), START_TIME,
+            message.getConfiguration().getDataStore().updateStaticData(dial.getFeatureFilterId(), START_TIME,
                     DateTimeFormat.forPattern("HH:mm:ss").print(startTime));
-            Dials.getRegisteredDataStore().updateStaticData(dial.getFeatureFilterId(), END_TIME,
+            message.getConfiguration().getDataStore().updateStaticData(dial.getFeatureFilterId(), END_TIME,
                     DateTimeFormat.forPattern("HH:mm:ss").print(endTime));
-            Dials.getRegisteredDataStore().registerDialAttempt(dial.getFeatureFilterId());
+            message.getConfiguration().getDataStore().registerDialAttempt(dial.getFeatureFilterId());
 
-            executionContext.addExecutionStep("Dial successfully executed. New start time is " + startTime + " new end time is " + endTime);
+            message.getExecutionContext().addExecutionStep("Dial successfully executed. New start time is "
+                    + startTime + " new end time is " + endTime);
 
             if (startTime.toDateTimeToday().isAfter(endTime.toDateTimeToday())) {
-                Dials.getRegisteredDataStore().disableFeature(executionContext.getFeatureName());
-                executionContext.addExecutionStep("Start time is now after end time, disabling feature.");
+                message.getConfiguration().getDataStore().disableFeature(message.getExecutionContext().getFeatureName());
+                message.getExecutionContext().addExecutionStep("Start time is now after end time, disabling feature.");
             }
         }
     }
@@ -160,12 +158,12 @@ public class TimeWindowFeatureFilter extends FeatureFilter implements StaticData
         }
     }
 
-    private class TimeWindowPattern {
+    protected static class TimeWindowPattern {
         private Integer amount;
         private String unit;
         private String direction;
 
-        private TimeWindowPattern(Integer amount, String unit, String direction) {
+        public TimeWindowPattern(Integer amount, String unit, String direction) {
             this.amount = amount;
             this.unit = unit;
             this.direction = direction;
@@ -181,6 +179,41 @@ public class TimeWindowFeatureFilter extends FeatureFilter implements StaticData
 
         public String getDirection() {
             return direction;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            TimeWindowPattern that = (TimeWindowPattern) o;
+
+            if (amount != null ? !amount.equals(that.amount) : that.amount != null) {
+                return false;
+            }
+
+            if (direction != null ? !direction.equals(that.direction) : that.direction != null) {
+                return false;
+            }
+
+            if (unit != null ? !unit.equals(that.unit) : that.unit != null) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = amount != null ? amount.hashCode() : 0;
+            result = 31 * result + (unit != null ? unit.hashCode() : 0);
+            result = 31 * result + (direction != null ? direction.hashCode() : 0);
+            return result;
         }
     }
 }

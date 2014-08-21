@@ -1,7 +1,6 @@
 package dials.execution;
 
 import akka.actor.UntypedActor;
-import dials.Dials;
 import dials.datastore.DataStore;
 import dials.messages.ContextualMessage;
 import org.slf4j.Logger;
@@ -21,7 +20,7 @@ public class ExecutionRegistry extends UntypedActor {
         if (message instanceof ContextualMessage) {
             ContextualMessage contextualMessage = (ContextualMessage) message;
 
-            DataStore dataStore = Dials.getRegisteredDataStore();
+            DataStore dataStore = ((ContextualMessage) message).getConfiguration().getDataStore();
             dataStore.registerAttempt(contextualMessage.getExecutionContext().getFeatureName(),
                     contextualMessage.getExecutionContext().getExecuted());
 

@@ -1,9 +1,8 @@
 package dials.dial;
 
-import dials.Dials;
 import dials.datastore.CountTuple;
 import dials.datastore.DataStore;
-import dials.execution.ExecutionContext;
+import dials.messages.ContextualMessage;
 
 import java.math.BigDecimal;
 
@@ -15,15 +14,15 @@ public class DialHelper {
         this.dial = dial;
     }
 
-    public String getDialPattern(ExecutionContext executionContext) {
+    public String getDialPattern(ContextualMessage message) {
         if (dial != null) {
-            CountTuple tuple = getCountTuple(dial, executionContext);
+            CountTuple tuple = getCountTuple(dial, message);
 
             if (tuple != null) {
-                String dialIncreaseResult = determineDialIncreaseEligibility(dial, tuple, executionContext);
+                String dialIncreaseResult = determineDialIncreaseEligibility(dial, tuple, message);
 
                 if (dialIncreaseResult.equals("")) {
-                    return determineDialDecreaseEligibility(dial, tuple, executionContext);
+                    return determineDialDecreaseEligibility(dial, tuple, message);
                 } else {
                     return dialIncreaseResult;
                 }
@@ -33,10 +32,10 @@ public class DialHelper {
         return "";
     }
 
-    private CountTuple getCountTuple(Dial dial, ExecutionContext executionContext) {
-        DataStore dataStore = Dials.getRegisteredDataStore();
+    private CountTuple getCountTuple(Dial dial, ContextualMessage message) {
+        DataStore dataStore = message.getConfiguration().getDataStore();
 
-        CountTuple tuple = dataStore.getExecutionCountTuple(executionContext.getFeatureName());
+        CountTuple tuple = dataStore.getExecutionCountTuple(message.getExecutionContext().getFeatureName());
 
         if (dial.getFrequency() + (dial.getFrequency() * dial.getAttempts()) > tuple.getExecutions()) {
             return null;
@@ -45,22 +44,22 @@ public class DialHelper {
         return tuple;
     }
 
-    private String determineDialIncreaseEligibility(Dial dial, CountTuple tuple, ExecutionContext executionContext) {
+    private String determineDialIncreaseEligibility(Dial dial, CountTuple tuple, ContextualMessage message) {
         if (tuple.getRateOfSuccess().compareTo(new BigDecimal(dial.getIncreaseThreshold())) >= 0) {
             return dial.getIncreasePattern();
         }
 
-        executionContext.addExecutionStep("Filter not eligible for Dial increase.");
+        message.getExecutionContext().addExecutionStep("Filter not eligible for Dial increase.");
 
         return "";
     }
 
-    private String determineDialDecreaseEligibility(Dial dial, CountTuple tuple, ExecutionContext executionContext) {
+    private String determineDialDecreaseEligibility(Dial dial, CountTuple tuple, ContextualMessage message) {
         if (tuple.getRateOfSuccess().compareTo(new BigDecimal(dial.getDecreaseThreshold())) < 0) {
             return dial.getDecreasePattern();
         }
 
-        executionContext.addExecutionStep("Filter not eligible for Dial decrease.");
+        message.getExecutionContext().addExecutionStep("Filter not eligible for Dial decrease.");
 
         return "";
     }
