@@ -110,6 +110,10 @@ public class JdbcDataStore implements DataStore {
         jdbcTemplate.update("update dials_feature_execution set errors = (errors + 1) "
                 + "where feature_id = (select feature_id from dials_feature where feature_name = ?)", featureName);
 
+        killswitchEngage(featureName, jdbcTemplate);
+    }
+
+    private void killswitchEngage(String featureName, JdbcTemplate jdbcTemplate) {
         CountTuple tuple = getExecutionCountTuple(featureName);
 
         if (tuple.getExecutions() >= MINIMUM_EXECUTION_COUNT) {
