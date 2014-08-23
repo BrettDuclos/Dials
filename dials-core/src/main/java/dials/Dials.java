@@ -66,7 +66,7 @@ public class Dials {
     }
 
     private static void sendFeatureStateRequest(String featureName, FilterData dynamicData, ActorRef dispatcher) {
-        FeatureStateRequestMessage message = new FeatureStateRequestMessage(featureName, dynamicData, new ContextualMessage(
+        FeatureStateRequestMessage message = new FeatureStateRequestMessage(dynamicData, new ContextualMessage(
                 new ExecutionContext(featureName).addExecutionStep("Feature State Request Started"), systemConfiguration));
         inbox.send(dispatcher, message);
     }

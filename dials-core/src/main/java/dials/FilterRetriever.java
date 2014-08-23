@@ -18,26 +18,29 @@ public class FilterRetriever extends UntypedActor {
     @Override
     public void onReceive(Object message) throws Exception {
         if (message instanceof FilterRetrievalRequestMessage) {
-            FilterRetrievalRequestMessage requestMessage = (FilterRetrievalRequestMessage) message;
-
-            DataStore dataStore = requestMessage.getConfiguration().getDataStore();
-
-            if (!dataStore.isFeatureEnabled(requestMessage.getFeatureName())) {
-                requestMessage.getExecutionContext().addExecutionStep("Feature Is Disabled Or Does Not Exist - Abandoning");
-                sender().tell(new AbandonMessage(requestMessage), self());
-                return;
-            }
-
-            FeatureFilterDataBean dataBean = dataStore.getFiltersForFeature(requestMessage.getFeatureName());
-
-            if (dataBean.getFilters() == null || dataBean.getFilters().isEmpty()) {
-                requestMessage.getExecutionContext().addExecutionStep("No Filters Detected");
-                sender().tell(new FilterRetrievalResultMessage(requestMessage), self());
-                return;
-            }
-
-            sender().tell(buildResultMessage(requestMessage, dataBean), self());
+            handleFilterRetrievalRequestMessage((FilterRetrievalRequestMessage) message);
         }
+    }
+
+    private void handleFilterRetrievalRequestMessage(FilterRetrievalRequestMessage message) {
+
+        DataStore dataStore = message.getConfiguration().getDataStore();
+
+        if (!dataStore.isFeatureEnabled(message.getExecutionContext().getFeatureName())) {
+            message.getExecutionContext().addExecutionStep("Feature Is Disabled Or Does Not Exist - Abandoning");
+            sender().tell(new AbandonMessage(message), self());
+            return;
+        }
+
+        FeatureFilterDataBean dataBean = dataStore.getFiltersForFeature(message.getExecutionContext().getFeatureName());
+
+        if (dataBean.getFilters() == null || dataBean.getFilters().isEmpty()) {
+            message.getExecutionContext().addExecutionStep("No Filters Detected");
+            sender().tell(new FilterRetrievalResultMessage(message), self());
+            return;
+        }
+
+        sender().tell(buildResultMessage(message, dataBean), self());
     }
 
     private FilterRetrievalResultMessage buildResultMessage(FilterRetrievalRequestMessage message, FeatureFilterDataBean dataBean) {

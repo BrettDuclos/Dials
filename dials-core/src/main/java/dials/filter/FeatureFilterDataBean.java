@@ -17,8 +17,7 @@ public class FeatureFilterDataBean {
 
     public void addFilterData(String filterName, String dataKey, Object dataValue) {
         if (filters.get(filterName) == null) {
-            Map<String, Object> filterData = new HashMap<>();
-            filters.put(filterName, filterData);
+            filters.put(filterName, new HashMap<String, Object>());
         }
 
         if (dataKey != null) {
