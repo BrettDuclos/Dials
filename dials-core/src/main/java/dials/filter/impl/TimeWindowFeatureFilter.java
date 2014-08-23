@@ -11,6 +11,7 @@ import dials.messages.ContextualMessage;
 import dials.messages.DataFilterApplicationMessage;
 import org.joda.time.Hours;
 import org.joda.time.LocalTime;
+import org.joda.time.Minutes;
 import org.joda.time.format.DateTimeFormat;
 
 public class TimeWindowFeatureFilter extends FeatureFilter implements StaticDataFilter, Dialable {
@@ -19,16 +20,21 @@ public class TimeWindowFeatureFilter extends FeatureFilter implements StaticData
     public static final String END_TIME = "EndTime";
 
     private static final int EXPECTED_PATTERN_LENGTH = 3;
+    private static final int MINUTES_IN_DAY = 1440;
 
     private LocalTime startTime;
-    private LocalTime endTime;
+    private Integer timeWindowInMinutes;
+    private boolean crossesMidnight;
 
     @Override
     public boolean filter() {
-        if ((startTime.toDateTimeToday().isBeforeNow()
-                || startTime.toDateTimeToday().isEqualNow())
-                && endTime.toDateTimeToday().isAfterNow()
-                || endTime.toDateTimeToday().isEqualNow()) {
+        LocalTime now = LocalTime.now();
+
+        if (timeWindowInMinutes >= MINUTES_IN_DAY) {
+            return true;
+        } else if (crossesMidnight && (now.isAfter(startTime) || now.isBefore(startTime.plusMinutes(timeWindowInMinutes)))) {
+            return true;
+        } else if (!crossesMidnight && now.isAfter(startTime) && now.isBefore(startTime.plusMinutes(timeWindowInMinutes))) {
             return true;
         }
 
@@ -53,6 +59,7 @@ public class TimeWindowFeatureFilter extends FeatureFilter implements StaticData
             success = false;
         }
 
+        LocalTime endTime = startTime;
         try {
             endTime = helper.getData(END_TIME, LocalTime.class);
             recordSuccessfulDataApply(message, END_TIME);
@@ -63,6 +70,13 @@ public class TimeWindowFeatureFilter extends FeatureFilter implements StaticData
 
         if (!success) {
             abandon(message);
+        } else if (startTime.isAfter(endTime) || startTime.isEqual(endTime)) {
+            Minutes minutes = Minutes.minutesBetween(endTime, startTime);
+            timeWindowInMinutes = MINUTES_IN_DAY - minutes.getMinutes();
+            crossesMidnight = true;
+        } else {
+            Minutes minutes = Minutes.minutesBetween(startTime, endTime);
+            timeWindowInMinutes = minutes.getMinutes();
         }
     }
 
@@ -83,13 +97,13 @@ public class TimeWindowFeatureFilter extends FeatureFilter implements StaticData
             message.getConfiguration().getDataStore().updateStaticData(dial.getFeatureFilterId(), START_TIME,
                     DateTimeFormat.forPattern("HH:mm:ss").print(startTime));
             message.getConfiguration().getDataStore().updateStaticData(dial.getFeatureFilterId(), END_TIME,
-                    DateTimeFormat.forPattern("HH:mm:ss").print(endTime));
+                    DateTimeFormat.forPattern("HH:mm:ss").print(startTime.plusMinutes(timeWindowInMinutes)));
             message.getConfiguration().getDataStore().registerDialAttempt(dial.getFeatureFilterId());
 
             message.getExecutionContext().addExecutionStep("Dial successfully executed. New start time is "
-                    + startTime + " new end time is " + endTime);
+                    + startTime + " new end time is " + startTime.plusMinutes(timeWindowInMinutes));
 
-            if (startTime.toDateTimeToday().isAfter(endTime.toDateTimeToday())) {
+            if (startTime.toDateTimeToday().isAfter(startTime.plusMinutes(timeWindowInMinutes).toDateTimeToday())) {
                 message.getConfiguration().getDataStore().disableFeature(message.getExecutionContext().getFeatureName());
                 message.getExecutionContext().addExecutionStep("Start time is now after end time, disabling feature.");
             }
@@ -122,40 +136,60 @@ public class TimeWindowFeatureFilter extends FeatureFilter implements StaticData
         return null;
     }
 
-    private void calculateNewTimes(TimeWindowPattern timeToAdd) {
+    protected void calculateNewTimes(TimeWindowPattern timeToAdd) {
         String unit = timeToAdd.getUnit();
         String direction = timeToAdd.getDirection();
 
         int minutesToAdd = 0;
-        if (unit.startsWith("hour") || unit.startsWith("Hour")) {
+        if (unit.toLowerCase().startsWith("hour")) {
             minutesToAdd = Hours.hours(timeToAdd.getAmount()).toStandardMinutes().getMinutes();
-        } else if (unit.startsWith("minute") || unit.startsWith("Minute")) {
+        } else if (unit.toLowerCase().startsWith("minute")) {
             minutesToAdd = timeToAdd.getAmount();
         }
 
-        LocalTime newStartTime = startTime.minusMinutes(minutesToAdd);
-        LocalTime newEndTime = endTime.plusMinutes(minutesToAdd);
+        LocalTime newStartTime;
 
-        if (newStartTime.isAfter(startTime) && minutesToAdd > 0) {
-            newStartTime = LocalTime.MIDNIGHT;
+        if (direction.equals("start")) {
+            newStartTime = startTime.minusMinutes(minutesToAdd);
+            timeWindowInMinutes += minutesToAdd;
+        } else if (direction.equals("end")) {
+            newStartTime = startTime;
+            timeWindowInMinutes += minutesToAdd;
+        } else {
+            newStartTime = startTime.minusMinutes(minutesToAdd);
+            timeWindowInMinutes += minutesToAdd * 2;
         }
 
-        if (newEndTime.isBefore(endTime) && minutesToAdd > 0) {
-            newEndTime = LocalTime.MIDNIGHT.minusMillis(1);
+        if (newStartTime.isAfter(newStartTime.plusMinutes(timeWindowInMinutes)) || timeWindowInMinutes >= MINUTES_IN_DAY) {
+            crossesMidnight = true;
+        } else {
+            crossesMidnight = false;
         }
 
-        switch (direction) {
-            case "start":
-                startTime = newStartTime;
-                break;
-            case "end":
-                endTime = newEndTime;
-                break;
-            case "both":
-                startTime = newStartTime;
-                endTime = newEndTime;
-                break;
+        if (timeWindowInMinutes <= MINUTES_IN_DAY) {
+            switch (direction) {
+                case "start":
+                case "both":
+                    startTime = newStartTime;
+                    break;
+                case "end":
+                    break;
+            }
+        } else {
+            timeWindowInMinutes = MINUTES_IN_DAY;
         }
+    }
+
+    protected LocalTime getStartTime() {
+        return startTime;
+    }
+
+    protected LocalTime getEndTime() {
+        return startTime.plusMinutes(timeWindowInMinutes);
+    }
+
+    protected boolean getCrossesMidnight() {
+        return crossesMidnight;
     }
 
     protected static class TimeWindowPattern {
@@ -216,4 +250,5 @@ public class TimeWindowFeatureFilter extends FeatureFilter implements StaticData
             return result;
         }
     }
+
 }
