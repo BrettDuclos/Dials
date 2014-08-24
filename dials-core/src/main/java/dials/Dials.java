@@ -20,7 +20,7 @@ public class Dials {
 
     private static Logger logger = LoggerFactory.getLogger(Dials.class);
 
-    private static final int TIMEOUT = 500;
+    private static final int TIMEOUT = 100;
     private static final int ACTOR_COUNT = 5;
 
     private static ActorSystem system;

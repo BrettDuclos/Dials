@@ -31,6 +31,13 @@ public class ContextualMessage implements FeatureManipulationActions {
         return configuration.getRepository().getFeature(executionContext.getFeatureName());
     }
 
+    public void registerAbandonment() {
+        executionContext.setAbandoned(true);
+    }
+
+    public boolean isAbandoned() {
+        return executionContext.isAbandoned();
+    }
 
     @Override
     public void disableFeature(String featureName) {

@@ -31,7 +31,8 @@ public class FeatureModel implements Serializable {
     @OneToMany(mappedBy = "feature", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private Set<FilterModel> filters;
 
-    @OneToOne(optional = true, mappedBy = "feature", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToOne(optional = true, cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @PrimaryKeyJoinColumn
     private FeatureExecutionModel execution;
 
     @Transient

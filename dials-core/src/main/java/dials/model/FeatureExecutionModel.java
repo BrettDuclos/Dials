@@ -11,13 +11,13 @@ import java.io.Serializable;
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class FeatureExecutionModel implements Serializable {
 
-    @Id
-    @Column(name = "feature_execution_id")
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer featureExecutionId;
 
-    @OneToOne
-    @JoinColumn(name = "feature_id")
+    @Id
+    @Column(name = "feature_id")
+    private Integer featureId;
+
+    @OneToOne(mappedBy = "execution")
+    @PrimaryKeyJoinColumn
     private FeatureModel feature;
 
     @Column(name = "attempts")
@@ -29,12 +29,12 @@ public class FeatureExecutionModel implements Serializable {
     @Column(name = "errors")
     private Integer errors;
 
-    public Integer getFeatureExecutionId() {
-        return featureExecutionId;
+    public Integer getFeatureId() {
+        return featureId;
     }
 
-    public void setFeatureExecutionId(Integer featureExecutionId) {
-        this.featureExecutionId = featureExecutionId;
+    public void setFeatureId(Integer featureId) {
+        this.featureId = featureId;
     }
 
     public FeatureModel getFeature() {

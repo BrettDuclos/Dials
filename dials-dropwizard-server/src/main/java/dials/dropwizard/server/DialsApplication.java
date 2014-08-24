@@ -1,6 +1,6 @@
 package dials.dropwizard.server;
 
-import dials.DialsSystemConfiguration;
+import dials.DialsSystemInitializer;
 import dials.dropwizard.server.resources.DialsFeatureStateResource;
 import dials.execution.ExecutionContextRecorder;
 import dials.execution.LoggingBasedExecutionContextRecorder;
@@ -33,7 +33,7 @@ public class DialsApplication extends Application<DialsApplicationConfiguration>
 
     private void initializeDials(EntityManager entityManager) throws ClassNotFoundException {
         ExecutionContextRecorder contextRecorder = new LoggingBasedExecutionContextRecorder(LoggingBasedExecutionContextRecorder.INFO);
-        new DialsSystemConfiguration().withEntityManager(entityManager)
+        DialsSystemInitializer.getInstance().withEntityManager(entityManager)
                 .withExecutionContextRecorder(contextRecorder).withFailFastEnabled(true).initializeSystem();
     }
 

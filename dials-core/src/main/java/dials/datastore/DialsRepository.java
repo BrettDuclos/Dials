@@ -1,14 +1,14 @@
 package dials.datastore;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import dials.model.FeatureExecutionModel;
 import dials.model.FeatureModel;
 import dials.model.FilterModel;
 
-import java.util.Map;
-
 public class DialsRepository implements FeatureManipulationActions {
 
-    private Map<String, FeatureModel> featureMap;
+    private IMap<String, FeatureModel> featureMap;
 
     public DialsRepository(HazelcastInstance hazelcast) {
         featureMap = hazelcast.getMap("featureMap");
@@ -32,15 +32,28 @@ public class DialsRepository implements FeatureManipulationActions {
     @Override
     public void registerFeatureAttempt(String featureName, boolean executed) {
         FeatureModel feature = getFeature(featureName);
-        feature.getExecution().registerAttempt(executed);
+        getExecution(feature).registerAttempt(executed);
         putFeature(feature);
     }
 
     @Override
     public void registerFeatureError(String featureName) {
         FeatureModel feature = getFeature(featureName);
-        feature.getExecution().registerError();
+        getExecution(feature).registerError();
         putFeature(feature);
+    }
+
+    private FeatureExecutionModel getExecution(FeatureModel feature) {
+        if (feature.getExecution() == null) {
+            FeatureExecutionModel executionModel = new FeatureExecutionModel();
+            executionModel.setFeatureId(feature.getFeatureId());
+            executionModel.setAttempts(0);
+            executionModel.setExecutions(0);
+            executionModel.setErrors(0);
+            feature.setExecution(executionModel);
+        }
+
+        return feature.getExecution();
     }
 
     @Override
@@ -53,3 +66,4 @@ public class DialsRepository implements FeatureManipulationActions {
     }
 
 }
+

@@ -12,12 +12,11 @@ import java.io.Serializable;
 public class FilterDialModel implements Serializable {
 
     @Id
-    @Column(name = "feature_filter_dial_id")
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer featureFilterDialId;
+    @Column(name = "feature_filter_id")
+    private Integer featureFilterId;
 
-    @OneToOne
-    @JoinColumn(name = "feature_filter_id")
+    @OneToOne(mappedBy = "dial")
+    @PrimaryKeyJoinColumn
     private FilterModel filter;
 
     @Column(name = "frequency")
@@ -38,12 +37,12 @@ public class FilterDialModel implements Serializable {
     @Column(name = "decrease_pattern")
     private String decreasePattern;
 
-    public Integer getFeatureFilterDialId() {
-        return featureFilterDialId;
+    public Integer getFeatureFilterId() {
+        return featureFilterId;
     }
 
-    public void setFeatureFilterDialId(Integer featureFilterDialId) {
-        this.featureFilterDialId = featureFilterDialId;
+    public void setFeatureFilterId(Integer featureFilterId) {
+        this.featureFilterId = featureFilterId;
     }
 
     public FilterModel getFilter() {

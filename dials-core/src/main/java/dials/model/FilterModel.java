@@ -27,7 +27,8 @@ public class FilterModel implements Serializable {
     @OneToMany(mappedBy = "filter", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private Set<FilterStaticDataModel> staticData;
 
-    @OneToOne(optional = true, mappedBy = "filter", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToOne(optional = true, cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @PrimaryKeyJoinColumn
     private FilterDialModel dial;
 
     public Integer getFeatureFilterId() {

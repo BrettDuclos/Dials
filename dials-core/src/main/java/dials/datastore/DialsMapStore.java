@@ -4,6 +4,7 @@ import com.hazelcast.core.MapStore;
 import dials.model.FeatureModel;
 
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -52,7 +53,12 @@ public class DialsMapStore implements MapStore<String, FeatureModel> {
         TypedQuery<FeatureModel> query =
                 entityManager.createQuery("from FeatureModel where feature_name = :featureName", FeatureModel.class)
                         .setParameter("featureName", key).setMaxResults(1);
-        return query.getSingleResult();
+
+        try {
+            return query.getSingleResult();
+        } catch (NoResultException e) {
+            return null;
+        }
     }
 
     @Override

@@ -2,10 +2,7 @@ package dials;
 
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
-import dials.messages.FilterDispatchRequestMessage;
-import dials.messages.FilterDispatchResultMessage;
-import dials.messages.FilterRequestMessage;
-import dials.messages.FilterResultMessage;
+import dials.messages.*;
 
 public class FilterDispatcher extends UntypedActor {
 
@@ -23,10 +20,12 @@ public class FilterDispatcher extends UntypedActor {
 
     @Override
     public void onReceive(Object message) throws Exception {
-        if (message instanceof FilterDispatchRequestMessage) {
-            handleFilterDispatchRequestMessage((FilterDispatchRequestMessage) message);
-        } else if (message instanceof FilterResultMessage) {
-            handleFilterResultMessage((FilterResultMessage) message);
+        if (message instanceof ContextualMessage && !((ContextualMessage) message).isAbandoned()) {
+            if (message instanceof FilterDispatchRequestMessage) {
+                handleFilterDispatchRequestMessage((FilterDispatchRequestMessage) message);
+            } else if (message instanceof FilterResultMessage) {
+                handleFilterResultMessage((FilterResultMessage) message);
+            }
         }
     }
 

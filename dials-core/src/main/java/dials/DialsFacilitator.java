@@ -16,14 +16,16 @@ public class DialsFacilitator extends UntypedActor {
 
     @Override
     public void onReceive(Object message) throws Exception {
-        if (message instanceof FeatureStateRequestMessage) {
-            handleFeatureStateRequestMessage((FeatureStateRequestMessage) message);
-        } else if (message instanceof FilterRetrievalResultMessage) {
-            handleFilterRetrievalResultMessage((FilterRetrievalResultMessage) message);
-        } else if (message instanceof FilterDispatchResultMessage) {
-            handleFilterDispatchResultMessage((FilterDispatchResultMessage) message);
-        } else if (message instanceof AbandonMessage) {
-            abandon((ContextualMessage) message);
+        if (message instanceof ContextualMessage && !((ContextualMessage) message).isAbandoned()) {
+            if (message instanceof FeatureStateRequestMessage) {
+                handleFeatureStateRequestMessage((FeatureStateRequestMessage) message);
+            } else if (message instanceof FilterRetrievalResultMessage) {
+                handleFilterRetrievalResultMessage((FilterRetrievalResultMessage) message);
+            } else if (message instanceof FilterDispatchResultMessage) {
+                handleFilterDispatchResultMessage((FilterDispatchResultMessage) message);
+            } else if (message instanceof AbandonMessage) {
+                abandon((ContextualMessage) message);
+            }
         }
     }
 
@@ -58,6 +60,7 @@ public class DialsFacilitator extends UntypedActor {
     }
 
     private void abandon(ContextualMessage message) {
+        message.registerAbandonment();
         respondToSystem(false, message);
     }
 

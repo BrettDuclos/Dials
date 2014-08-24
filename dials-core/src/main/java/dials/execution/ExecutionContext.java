@@ -11,9 +11,10 @@ public class ExecutionContext {
     private SimpleDateFormat sdf;
 
     private String featureName;
-    private boolean executed;
     private List<String> executionSteps;
 
+    private boolean abandoned;
+    private boolean executed;
     private boolean complete;
 
     public ExecutionContext(String featureName) {
@@ -33,6 +34,14 @@ public class ExecutionContext {
     public void setExecuted(boolean executed) {
         this.executed = executed;
         complete = true;
+    }
+
+    public boolean isAbandoned() {
+        return abandoned;
+    }
+
+    public void setAbandoned(boolean abandoned) {
+        this.abandoned = abandoned;
     }
 
     public List<String> getExecutionSteps() {

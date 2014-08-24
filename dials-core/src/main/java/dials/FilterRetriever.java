@@ -18,8 +18,10 @@ public class FilterRetriever extends UntypedActor {
 
     @Override
     public void onReceive(Object message) throws Exception {
-        if (message instanceof FilterRetrievalRequestMessage) {
-            handleFilterRetrievalRequestMessage((FilterRetrievalRequestMessage) message);
+        if (message instanceof ContextualMessage && !((ContextualMessage) message).isAbandoned()) {
+            if (message instanceof FilterRetrievalRequestMessage) {
+                handleFilterRetrievalRequestMessage((FilterRetrievalRequestMessage) message);
+            }
         }
     }
 
@@ -50,15 +52,11 @@ public class FilterRetriever extends UntypedActor {
                 ActorRef filterActor = context().actorOf(Props.create(filterClass));
 
                 if (StaticDataFilter.class.isAssignableFrom(filterClass)) {
-                    if (!staticData.getDataObjects().isEmpty()) {
-                        filterActor.tell(new StaticDataFilterApplicationMessage(staticData, resultMessage), self());
-                    }
+                    filterActor.tell(new StaticDataFilterApplicationMessage(staticData, resultMessage), self());
                 }
 
                 if (DynamicDataFilter.class.isAssignableFrom(filterClass)) {
-                    if (!message.getDynamicData().getDataObjects().isEmpty()) {
-                        filterActor.tell(new DynamicDataFilterApplicationMessage(message.getDynamicData(), resultMessage), self());
-                    }
+                    filterActor.tell(new DynamicDataFilterApplicationMessage(message.getDynamicData(), resultMessage), self());
                 }
 
                 if (Dialable.class.isAssignableFrom(filterClass)) {
