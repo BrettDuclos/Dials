@@ -2,6 +2,7 @@ package dials;
 
 import akka.actor.*;
 import akka.routing.RoundRobinPool;
+import com.codahale.metrics.Timer;
 import dials.execution.ExecutionContext;
 import dials.execution.ExecutionRegistry;
 import dials.filter.FilterData;
@@ -15,6 +16,8 @@ import scala.concurrent.duration.Duration;
 
 import javax.persistence.PersistenceException;
 import java.util.concurrent.TimeUnit;
+
+import static com.codahale.metrics.MetricRegistry.name;
 
 public class Dials {
 
@@ -43,20 +46,27 @@ public class Dials {
         return getState(featureName, new FilterData());
     }
 
-    public static boolean getState(String featureName, FilterData dynamicData) {
+    public static boolean getState(final String featureName, FilterData dynamicData) {
         if (!initialized) {
             logger.error("Dials system has not been initialized.");
             return false;
         }
 
+        systemConfiguration.getMetricRegistry().meter(name("Dials", featureName, "RequestAttemptMeter")).mark();
+
+        Timer.Context timer = systemConfiguration.getMetricRegistry()
+                .timer(name("Dials", featureName, "RequestTimer")).time();
+
         FeatureModel feature = getFeature(featureName);
 
         if (feature == null) {
+            timer.stop();
             return false;
         }
 
         if (!feature.getIsEnabled()) {
             logger.warn("Requested feature is disabled.");
+            timer.stop();
             return false;
         }
 
@@ -68,6 +78,11 @@ public class Dials {
 
         inbox.send(dispatcher, PoisonPill.getInstance());
 
+        timer.stop();
+
+        if (state) {
+            systemConfiguration.getMetricRegistry().meter(name("Dials", featureName, "RequestExecutionMeter")).mark();
+        }
         return state;
     }
 
@@ -101,6 +116,7 @@ public class Dials {
     }
 
     public static void sendError(String featureName) {
+        systemConfiguration.getMetricRegistry().meter(name("Dials", featureName, "RequestErrorMeter")).mark();
         systemConfiguration.getRepository().registerFeatureError(featureName);
     }
 

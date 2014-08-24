@@ -1,8 +1,11 @@
 package dials;
 
+import com.codahale.metrics.JmxReporter;
+import com.codahale.metrics.MetricRegistry;
 import com.hazelcast.hibernate.instance.HazelcastAccessor;
 import dials.datastore.DialsMapStore;
 import dials.datastore.DialsRepository;
+import dials.datastore.EntityManagerHelper;
 import dials.execution.ExecutionContextRecorder;
 import dials.execution.NoopExecutionContextRecorder;
 import dials.filter.FeatureFilter;
@@ -11,7 +14,7 @@ import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -20,6 +23,8 @@ public class DialsSystemConfiguration {
 
     private Logger logger = LoggerFactory.getLogger(DialsSystemConfiguration.class);
 
+    private MetricRegistry metricRegistry;
+    private JmxReporter metricReporter;
     private DialsRepository repository;
     private ExecutionContextRecorder executionContextRecorder;
     private Map<String, Class<? extends FeatureFilter>> availableFeatureFilters;
@@ -48,7 +53,21 @@ public class DialsSystemConfiguration {
             executionContextRecorder = new NoopExecutionContextRecorder();
         }
 
+        if (metricRegistry == null) {
+            metricRegistry = new MetricRegistry();
+            metricReporter = JmxReporter.forRegistry(metricRegistry).inDomain("Dials").build();
+            metricReporter.start();
+        }
+
         return true;
+    }
+
+    public MetricRegistry getMetricRegistry() {
+        return metricRegistry;
+    }
+
+    protected void setMetricRegistry(MetricRegistry metricRegistry) {
+        this.metricRegistry = metricRegistry;
     }
 
     public DialsRepository getRepository() {
@@ -75,8 +94,9 @@ public class DialsSystemConfiguration {
         return availableFeatureFilters;
     }
 
-    protected void setEntityManager(EntityManager entityManager) {
-        DialsMapStore.setEntityManager(entityManager);
-        repository = new DialsRepository(HazelcastAccessor.getHazelcastInstance(entityManager.unwrap(Session.class)));
+    protected void setEntityManagerFactory(EntityManagerFactory entityManagerFactory) {
+        DialsMapStore.setEntityManagerHelper(new EntityManagerHelper(entityManagerFactory));
+        repository = new DialsRepository(HazelcastAccessor
+                .getHazelcastInstance(entityManagerFactory.createEntityManager().unwrap(Session.class)));
     }
 }

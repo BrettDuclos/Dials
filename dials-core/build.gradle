@@ -7,6 +7,7 @@ dependencies {
     compile 'org.hibernate:hibernate-entitymanager:4.3.6.Final'
     compile 'com.hazelcast:hazelcast:3.2'
     compile 'com.hazelcast:hazelcast-hibernate4:3.2'
+    compile 'com.codahale.metrics:metrics-core:3.0.1'
 
     testCompile 'com.typesafe.akka:akka-testkit_2.10:2.3.5'
 

@@ -32,15 +32,19 @@ public class DialsRepository implements FeatureManipulationActions {
     @Override
     public void registerFeatureAttempt(String featureName, boolean executed) {
         FeatureModel feature = getFeature(featureName);
-        getExecution(feature).registerAttempt(executed);
-        putFeature(feature);
+        if (feature != null) {
+            getExecution(feature).registerAttempt(executed);
+            putFeature(feature);
+        }
     }
 
     @Override
     public void registerFeatureError(String featureName) {
         FeatureModel feature = getFeature(featureName);
-        getExecution(feature).registerError();
-        putFeature(feature);
+        if (feature != null) {
+            getExecution(feature).registerError();
+            putFeature(feature);
+        }
     }
 
     private FeatureExecutionModel getExecution(FeatureModel feature) {

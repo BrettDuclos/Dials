@@ -1,8 +1,9 @@
 package dials;
 
+import com.codahale.metrics.MetricRegistry;
 import dials.execution.ExecutionContextRecorder;
 
-import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 
 public class DialsSystemInitializer {
 
@@ -18,11 +19,10 @@ public class DialsSystemInitializer {
         return initializer;
     }
 
-    public DialsSystemInitializer withEntityManager(EntityManager entityManager) {
-        configuration.setEntityManager(entityManager);
+    public DialsSystemInitializer withEntityManagerFactory(EntityManagerFactory entityManagerFactory) {
+        configuration.setEntityManagerFactory(entityManagerFactory);
         return this;
     }
-
 
     public DialsSystemInitializer withExecutionContextRecorder(ExecutionContextRecorder executionContextRecorder) {
         configuration.setExecutionContextRecorder(executionContextRecorder);
@@ -31,6 +31,11 @@ public class DialsSystemInitializer {
 
     public DialsSystemInitializer withFailFastEnabled(boolean failFastEnabled) {
         configuration.setFailFastEnabled(failFastEnabled);
+        return this;
+    }
+
+    public DialsSystemInitializer withMetricRegistry(MetricRegistry metricRegistry) {
+        configuration.setMetricRegistry(metricRegistry);
         return this;
     }
 
