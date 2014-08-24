@@ -1,15 +1,17 @@
 package dials.dropwizard.server;
 
 import dials.DialsSystemConfiguration;
-import dials.datastore.DataStore;
-import dials.dropwizard.server.datastore.DataStoreSelecter;
-import dials.dropwizard.server.health.DataStoreHealthCheck;
 import dials.dropwizard.server.resources.DialsFeatureStateResource;
 import dials.execution.ExecutionContextRecorder;
 import dials.execution.LoggingBasedExecutionContextRecorder;
 import io.dropwizard.Application;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+
+import javax.persistence.EntityManager;
+import javax.persistence.Persistence;
+import java.util.HashMap;
+import java.util.Map;
 
 public class DialsApplication extends Application<DialsApplicationConfiguration> {
 
@@ -24,18 +26,25 @@ public class DialsApplication extends Application<DialsApplicationConfiguration>
 
     @Override
     public void run(DialsApplicationConfiguration configuration, Environment environment) throws Exception {
-        DataStore dataStore = new DataStoreSelecter().selectDataStore(configuration, environment);
-        initializeDials(dataStore, configuration, environment);
+        initializeDials(getEntityManager(configuration));
 
         environment.jersey().register(new DialsFeatureStateResource());
-        environment.healthChecks().register("Datastore", new DataStoreHealthCheck(dataStore));
     }
 
-    private void initializeDials(DataStore dataStore, DialsApplicationConfiguration configuration,
-                                 Environment environment) throws ClassNotFoundException {
+    private void initializeDials(EntityManager entityManager) throws ClassNotFoundException {
         ExecutionContextRecorder contextRecorder = new LoggingBasedExecutionContextRecorder(LoggingBasedExecutionContextRecorder.INFO);
-        new DialsSystemConfiguration().withDataStore(dataStore)
+        new DialsSystemConfiguration().withEntityManager(entityManager)
                 .withExecutionContextRecorder(contextRecorder).withFailFastEnabled(true).initializeSystem();
+    }
+
+    private EntityManager getEntityManager(DialsApplicationConfiguration configuration) {
+        Map<String, String> emfProperties = new HashMap<>();
+        emfProperties.put("javax.persistence.jdbc.driver", configuration.getDataSourceFactory().getDriverClass());
+        emfProperties.put("javax.persistence.jdbc.url", configuration.getDataSourceFactory().getUrl());
+        emfProperties.put("javax.persistence.jdbc.user", configuration.getDataSourceFactory().getUser());
+        emfProperties.put("javax.persistence.jdbc.password", configuration.getDataSourceFactory().getPassword());
+
+        return Persistence.createEntityManagerFactory("dialsManager", emfProperties).createEntityManager();
     }
 
 }

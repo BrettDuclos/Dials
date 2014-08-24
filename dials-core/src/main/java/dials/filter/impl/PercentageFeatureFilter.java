@@ -1,6 +1,5 @@
 package dials.filter.impl;
 
-import dials.dial.Dial;
 import dials.dial.DialHelper;
 import dials.dial.Dialable;
 import dials.filter.FeatureFilter;
@@ -9,6 +8,8 @@ import dials.filter.FilterDataHelper;
 import dials.filter.StaticDataFilter;
 import dials.messages.ContextualMessage;
 import dials.messages.DataFilterApplicationMessage;
+import dials.model.FeatureModel;
+import dials.model.FilterModel;
 
 import java.util.Random;
 
@@ -58,9 +59,11 @@ public class PercentageFeatureFilter extends FeatureFilter implements StaticData
     }
 
     @Override
-    public void dial(ContextualMessage message) {
-        Dial dial = message.getConfiguration().getDataStore().getFilterDial(message.getExecutionContext().getFeatureName(), this);
-        DialHelper helper = new DialHelper(dial);
+    public void dial(ContextualMessage message, String filterName) {
+        FeatureModel feature = message.getFeature();
+        FilterModel filter = feature.getFilter(filterName);
+
+        DialHelper helper = new DialHelper(filter.getDial());
 
         String dialPattern = helper.getDialPattern(message);
         Integer dialAmount = consumeDialPattern(dialPattern);
@@ -77,13 +80,13 @@ public class PercentageFeatureFilter extends FeatureFilter implements StaticData
                 percentage += dialAmount;
             }
 
-            message.getConfiguration().getDataStore().updateStaticData(dial.getFeatureFilterId(), PERCENTAGE, percentage.toString());
-            message.getConfiguration().getDataStore().registerDialAttempt(dial.getFeatureFilterId());
+            message.performDialAdjustment(feature.getFeatureName(), filterName, PERCENTAGE, percentage.toString());
+
 
             message.getExecutionContext().addExecutionStep("Dial successfully executed. New percentage is " + percentage);
 
             if (percentage == MIN_PERCENTAGE) {
-                message.getConfiguration().getDataStore().disableFeature(message.getExecutionContext().getFeatureName());
+                message.disableFeature(feature.getFeatureName());
                 message.getExecutionContext().addExecutionStep("Percentage has reached 0, disabling feature.");
             }
         }

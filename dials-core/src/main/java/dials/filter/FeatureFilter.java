@@ -29,7 +29,7 @@ public abstract class FeatureFilter extends UntypedActor {
             }
         } else if (message instanceof DialableFilterApplicationMessage) {
             if (this instanceof Dialable) {
-                ((Dialable) this).dial((ContextualMessage) message);
+                ((Dialable) this).dial((ContextualMessage) message, ((DialableFilterApplicationMessage) message).getFilterName());
             }
         }
     }

@@ -1,14 +1,18 @@
 package dials;
 
 import akka.actor.ActorRef;
-import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
 import dials.messages.*;
+import dials.model.FeatureModel;
+import dials.model.FilterModel;
+
+import java.util.Set;
 
 public class DialsFacilitator extends UntypedActor {
 
     private ActorRef requester;
+    private boolean finalized;
 
     @Override
     public void onReceive(Object message) throws Exception {
@@ -20,13 +24,19 @@ public class DialsFacilitator extends UntypedActor {
             handleFilterDispatchResultMessage((FilterDispatchResultMessage) message);
         } else if (message instanceof AbandonMessage) {
             abandon((ContextualMessage) message);
-        } else if (message instanceof RegisterErrorMessage) {
-            registerError((RegisterErrorMessage) message);
         }
     }
 
     private void handleFeatureStateRequestMessage(FeatureStateRequestMessage message) {
         requester = sender();
+
+        FeatureModel feature = message.getConfiguration().getRepository().getFeature(message.getExecutionContext().getFeatureName());
+
+        Set<FilterModel> filters = feature.getFilters();
+
+        if (filters == null || filters.isEmpty()) {
+            respondToSystem(true, message);
+        }
 
         context().actorOf(Props.create(FilterRetriever.class)).tell(
                 new FilterRetrievalRequestMessage(message), self()
@@ -57,14 +67,16 @@ public class DialsFacilitator extends UntypedActor {
     }
 
     private void finalizeExecution(boolean state, ContextualMessage message) {
-        message.getExecutionContext().addExecutionStep("Feature State Request Complete")
-                .addExecutionStep("Final Result - " + (state ? "Success" : "Failed"));
-        message.getExecutionContext().setExecuted(state);
-        context().system().actorSelection("/user/ExecutionRegistry").tell(new ContextualMessage(message), self());
-    }
+        if (!finalized) {
+            message.getExecutionContext().addExecutionStep("Feature State Request Complete")
+                    .addExecutionStep("Final Result - " + (state ? "Success" : "Failed"));
 
-    private void registerError(RegisterErrorMessage message) {
-        message.getConfiguration().getDataStore().registerError(message.getFeatureName());
-        self().tell(PoisonPill.getInstance(), ActorRef.noSender());
+            message.getExecutionContext().setExecuted(state);
+            message.registerFeatureAttempt(message.getExecutionContext().getFeatureName(), state);
+
+            context().system().actorSelection("/user/ExecutionRegistry").tell(new ContextualMessage(message), self());
+
+            finalized = true;
+        }
     }
 }

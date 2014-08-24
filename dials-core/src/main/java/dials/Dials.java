@@ -8,11 +8,12 @@ import dials.filter.FilterData;
 import dials.messages.ContextualMessage;
 import dials.messages.FeatureStateRequestMessage;
 import dials.messages.FeatureStateResultMessage;
-import dials.messages.RegisterErrorMessage;
+import dials.model.FeatureModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.concurrent.duration.Duration;
 
+import javax.persistence.PersistenceException;
 import java.util.concurrent.TimeUnit;
 
 public class Dials {
@@ -23,7 +24,6 @@ public class Dials {
     private static final int ACTOR_COUNT = 5;
 
     private static ActorSystem system;
-    private static Inbox inbox;
 
     private static DialsSystemConfiguration systemConfiguration;
 
@@ -35,7 +35,6 @@ public class Dials {
 
         system.actorOf(Props.create(ExecutionRegistry.class, configuration.getExecutionContextRecorder())
                 .withRouter(new RoundRobinPool(ACTOR_COUNT)), "ExecutionRegistry");
-        inbox = Inbox.create(system);
 
         initialized = true;
     }
@@ -50,28 +49,47 @@ public class Dials {
             return false;
         }
 
-        if (!systemConfiguration.getDataStore().doesFeatureExist(featureName)) {
-            logger.warn("Requested feature does not yet exist.");
+        FeatureModel feature = getFeature(featureName);
+
+        if (feature == null) {
             return false;
         }
 
-        ActorRef dispatcher = getNewDialsDispatcher();
-        sendFeatureStateRequest(featureName, dynamicData, dispatcher);
+        if (!feature.getIsEnabled()) {
+            logger.warn("Requested feature is disabled.");
+            return false;
+        }
 
-        boolean state = getFeatureStateResult();
+        Inbox inbox = Inbox.create(system);
+        ActorRef dispatcher = getNewDialsDispatcher();
+        sendFeatureStateRequest(inbox, featureName, dynamicData, dispatcher);
+
+        boolean state = getFeatureStateResult(inbox);
 
         inbox.send(dispatcher, PoisonPill.getInstance());
 
         return state;
     }
 
-    private static void sendFeatureStateRequest(String featureName, FilterData dynamicData, ActorRef dispatcher) {
+    private static FeatureModel getFeature(String featureName) {
+        FeatureModel feature = null;
+
+        try {
+            feature = systemConfiguration.getRepository().getFeature(featureName);
+        } catch (PersistenceException e) {
+            logger.warn("Requested feature does not yet exist.");
+        }
+
+        return feature;
+    }
+
+    private static void sendFeatureStateRequest(Inbox inbox, String featureName, FilterData dynamicData, ActorRef dispatcher) {
         FeatureStateRequestMessage message = new FeatureStateRequestMessage(dynamicData, new ContextualMessage(
                 new ExecutionContext(featureName).addExecutionStep("Feature State Request Started"), systemConfiguration));
         inbox.send(dispatcher, message);
     }
 
-    private static boolean getFeatureStateResult() {
+    private static boolean getFeatureStateResult(Inbox inbox) {
         boolean state = false;
 
         try {
@@ -83,7 +101,7 @@ public class Dials {
     }
 
     public static void sendError(String featureName) {
-        getNewDialsDispatcher().tell(new RegisterErrorMessage(featureName, systemConfiguration), ActorRef.noSender());
+        systemConfiguration.getRepository().registerFeatureError(featureName);
     }
 
     private static ActorRef getNewDialsDispatcher() {

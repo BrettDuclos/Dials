@@ -3,15 +3,16 @@ package dials;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
-import dials.datastore.DataStore;
 import dials.dial.Dialable;
 import dials.filter.DynamicDataFilter;
-import dials.filter.FeatureFilterDataBean;
 import dials.filter.FilterData;
 import dials.filter.StaticDataFilter;
 import dials.messages.*;
+import dials.model.FeatureModel;
+import dials.model.FilterModel;
+import dials.model.FilterStaticDataModel;
 
-import java.util.Map;
+import java.util.Set;
 
 public class FilterRetriever extends UntypedActor {
 
@@ -23,36 +24,25 @@ public class FilterRetriever extends UntypedActor {
     }
 
     private void handleFilterRetrievalRequestMessage(FilterRetrievalRequestMessage message) {
-
-        DataStore dataStore = message.getConfiguration().getDataStore();
-
-        if (!dataStore.isFeatureEnabled(message.getExecutionContext().getFeatureName())) {
-            message.getExecutionContext().addExecutionStep("Feature Is Disabled Or Does Not Exist - Abandoning");
-            sender().tell(new AbandonMessage(message), self());
-            return;
-        }
-
-        FeatureFilterDataBean dataBean = dataStore.getFiltersForFeature(message.getExecutionContext().getFeatureName());
-
-        if (dataBean.getFilters() == null || dataBean.getFilters().isEmpty()) {
-            message.getExecutionContext().addExecutionStep("No Filters Detected");
-            sender().tell(new FilterRetrievalResultMessage(message), self());
-            return;
-        }
-
-        sender().tell(buildResultMessage(message, dataBean), self());
+        sender().tell(buildResultMessage(message), self());
     }
 
-    private FilterRetrievalResultMessage buildResultMessage(FilterRetrievalRequestMessage message, FeatureFilterDataBean dataBean) {
+    private FilterRetrievalResultMessage buildResultMessage(FilterRetrievalRequestMessage message) {
+        FeatureModel feature = message.getConfiguration().getRepository()
+                .getFeature(message.getExecutionContext().getFeatureName());
+
+        Set<FilterModel> filters = feature.getFilters();
+
         FilterRetrievalResultMessage resultMessage = new FilterRetrievalResultMessage(message);
 
-        for (Map.Entry<String, Map<String, Object>> filter : dataBean.getFilters().entrySet()) {
-            FilterData data = new FilterData();
-            for (Map.Entry<String, Object> filterData : filter.getValue().entrySet()) {
-                data.addDataObject(filterData.getKey(), filterData.getValue());
+        for (FilterModel filter : filters) {
+            FilterData staticData = new FilterData();
+
+            for (FilterStaticDataModel staticDataModel : filter.getStaticData()) {
+                staticData.addDataObject(staticDataModel.getDataKey(), staticDataModel.getDataValue());
             }
 
-            Class filterClass = getClassForFilter(resultMessage, filter.getKey());
+            Class filterClass = getClassForFilter(resultMessage, filter.getFilterName());
 
             if (filterClass != null) {
                 resultMessage.getExecutionContext().addExecutionStep("Detected Filter - " + filterClass.getSimpleName());
@@ -60,20 +50,26 @@ public class FilterRetriever extends UntypedActor {
                 ActorRef filterActor = context().actorOf(Props.create(filterClass));
 
                 if (StaticDataFilter.class.isAssignableFrom(filterClass)) {
-                    filterActor.tell(new StaticDataFilterApplicationMessage(data, resultMessage), self());
+                    if (!staticData.getDataObjects().isEmpty()) {
+                        filterActor.tell(new StaticDataFilterApplicationMessage(staticData, resultMessage), self());
+                    }
                 }
 
                 if (DynamicDataFilter.class.isAssignableFrom(filterClass)) {
-                    filterActor.tell(new DynamicDataFilterApplicationMessage(message.getDynamicData(), resultMessage), self());
+                    if (!message.getDynamicData().getDataObjects().isEmpty()) {
+                        filterActor.tell(new DynamicDataFilterApplicationMessage(message.getDynamicData(), resultMessage), self());
+                    }
                 }
 
                 if (Dialable.class.isAssignableFrom(filterClass)) {
-                    filterActor.tell(new DialableFilterApplicationMessage(message), self());
+                    if (filter.getDial() != null) {
+                        filterActor.tell(new DialableFilterApplicationMessage(message, filter.getFilterName()), self());
+                    }
                 }
 
                 resultMessage.addFilter(filterActor);
             } else {
-                resultMessage.getExecutionContext().addExecutionStep("Detected Unknown Filter - " + filter.getKey());
+                resultMessage.getExecutionContext().addExecutionStep("Detected Unknown Filter - " + filter.getFilterName());
             }
         }
         return resultMessage;

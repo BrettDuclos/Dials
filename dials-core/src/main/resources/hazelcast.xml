@@ -1,0 +1,8 @@
+<hazelcast>
+    <map name="featureMap">
+        <map-store enabled="true">
+            <class-name>dials.datastore.DialsMapStore</class-name>
+            <write-delay-seconds>30</write-delay-seconds>
+        </map-store>
+    </map>
+</hazelcast>

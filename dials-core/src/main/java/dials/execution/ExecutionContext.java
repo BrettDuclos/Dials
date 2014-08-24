@@ -14,6 +14,8 @@ public class ExecutionContext {
     private boolean executed;
     private List<String> executionSteps;
 
+    private boolean complete;
+
     public ExecutionContext(String featureName) {
         sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         executionSteps = Collections.synchronizedList(new ArrayList<String>());
@@ -24,16 +26,13 @@ public class ExecutionContext {
         return featureName;
     }
 
-    public void setFeatureName(String featureName) {
-        this.featureName = featureName;
-    }
-
     public boolean getExecuted() {
         return executed;
     }
 
     public void setExecuted(boolean executed) {
         this.executed = executed;
+        complete = true;
     }
 
     public List<String> getExecutionSteps() {
@@ -41,7 +40,9 @@ public class ExecutionContext {
     }
 
     public ExecutionContext addExecutionStep(String step) {
-        executionSteps.add(sdf.format(new Date()) + " - " + step);
+        if (!complete) {
+            executionSteps.add(sdf.format(new Date()) + " - " + step);
+        }
         return this;
     }
 

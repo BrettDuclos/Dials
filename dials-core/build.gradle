@@ -2,8 +2,15 @@ dependencies {
     compile 'com.typesafe.akka:akka-actor_2.10:2.3.5'
     compile 'joda-time:joda-time:2.4'
     compile 'org.slf4j:slf4j-api:1.7.7'
-    compile 'org.springframework:spring-jdbc:4.0.6.RELEASE'
     compile 'org.reflections:reflections:0.9.9-RC1'
+    compile 'org.hibernate:hibernate-core:4.3.6.Final'
+    compile 'org.hibernate:hibernate-entitymanager:4.3.6.Final'
+    compile 'com.hazelcast:hazelcast:3.2'
+    compile 'com.hazelcast:hazelcast-hibernate4:3.2'
+
     testCompile 'com.typesafe.akka:akka-testkit_2.10:2.3.5'
+
 }
+
+
 

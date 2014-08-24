@@ -1,16 +1,16 @@
 package dials.dial;
 
 import dials.datastore.CountTuple;
-import dials.datastore.DataStore;
 import dials.messages.ContextualMessage;
+import dials.model.FilterDialModel;
 
 import java.math.BigDecimal;
 
 public class DialHelper {
 
-    private Dial dial;
+    private FilterDialModel dial;
 
-    public DialHelper(Dial dial) {
+    public DialHelper(FilterDialModel dial) {
         this.dial = dial;
     }
 
@@ -32,10 +32,9 @@ public class DialHelper {
         return "";
     }
 
-    private CountTuple getCountTuple(Dial dial, ContextualMessage message) {
-        DataStore dataStore = message.getConfiguration().getDataStore();
-
-        CountTuple tuple = dataStore.getExecutionCountTuple(message.getExecutionContext().getFeatureName());
+    private CountTuple getCountTuple(FilterDialModel dial, ContextualMessage message) {
+        CountTuple tuple = new CountTuple(message.getFeature().getExecution().getExecutions(),
+                message.getFeature().getExecution().getErrors());
 
         if (dial.getFrequency() + (dial.getFrequency() * dial.getAttempts()) > tuple.getExecutions()) {
             return null;
@@ -44,7 +43,7 @@ public class DialHelper {
         return tuple;
     }
 
-    private String determineDialIncreaseEligibility(Dial dial, CountTuple tuple, ContextualMessage message) {
+    private String determineDialIncreaseEligibility(FilterDialModel dial, CountTuple tuple, ContextualMessage message) {
         if (tuple.getRateOfSuccess().compareTo(new BigDecimal(dial.getIncreaseThreshold())) >= 0) {
             return dial.getIncreasePattern();
         }
@@ -54,7 +53,7 @@ public class DialHelper {
         return "";
     }
 
-    private String determineDialDecreaseEligibility(Dial dial, CountTuple tuple, ContextualMessage message) {
+    private String determineDialDecreaseEligibility(FilterDialModel dial, CountTuple tuple, ContextualMessage message) {
         if (tuple.getRateOfSuccess().compareTo(new BigDecimal(dial.getDecreaseThreshold())) < 0) {
             return dial.getDecreasePattern();
         }

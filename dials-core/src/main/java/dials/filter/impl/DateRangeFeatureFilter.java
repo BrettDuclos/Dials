@@ -1,6 +1,5 @@
 package dials.filter.impl;
 
-import dials.dial.Dial;
 import dials.dial.DialHelper;
 import dials.dial.Dialable;
 import dials.filter.FeatureFilter;
@@ -9,6 +8,7 @@ import dials.filter.FilterDataHelper;
 import dials.filter.StaticDataFilter;
 import dials.messages.ContextualMessage;
 import dials.messages.DataFilterApplicationMessage;
+import dials.model.FeatureModel;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 
@@ -58,9 +58,10 @@ public class DateRangeFeatureFilter extends FeatureFilter implements StaticDataF
     }
 
     @Override
-    public void dial(ContextualMessage message) {
-        Dial dial = message.getConfiguration().getDataStore().getFilterDial(message.getExecutionContext().getFeatureName(), this);
-        DialHelper helper = new DialHelper(dial);
+    public void dial(ContextualMessage message, String filterName) {
+        FeatureModel feature = message.getFeature();
+
+        DialHelper helper = new DialHelper(feature.getFilter(filterName).getDial());
 
         String dialPattern = helper.getDialPattern(message);
         Integer daysToAdd = consumeDialPattern(dialPattern);
@@ -71,14 +72,13 @@ public class DateRangeFeatureFilter extends FeatureFilter implements StaticDataF
 
             DateTime newEndDate = endDate.plusDays(daysToAdd);
 
-            message.getConfiguration().getDataStore().updateStaticData(dial.getFeatureFilterId(), END_DATE,
+            message.performDialAdjustment(feature.getFeatureName(), filterName, END_DATE,
                     DateTimeFormat.forPattern("yyyy-MM-dd").print(newEndDate));
-            message.getConfiguration().getDataStore().registerDialAttempt(dial.getFeatureFilterId());
 
             message.getExecutionContext().addExecutionStep("Dial successfully executed. New end date is " + endDate);
 
             if (endDate.isBeforeNow()) {
-                message.getConfiguration().getDataStore().disableFeature(message.getExecutionContext().getFeatureName());
+                message.disableFeature(feature.getFeatureName());
                 message.getExecutionContext().addExecutionStep("End date is now surpassed, disabling feature.");
             }
         }

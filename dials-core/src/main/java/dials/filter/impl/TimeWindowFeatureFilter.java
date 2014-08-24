@@ -1,6 +1,5 @@
 package dials.filter.impl;
 
-import dials.dial.Dial;
 import dials.dial.DialHelper;
 import dials.dial.Dialable;
 import dials.filter.FeatureFilter;
@@ -9,6 +8,8 @@ import dials.filter.FilterDataHelper;
 import dials.filter.StaticDataFilter;
 import dials.messages.ContextualMessage;
 import dials.messages.DataFilterApplicationMessage;
+import dials.model.FeatureModel;
+import dials.model.FilterModel;
 import org.joda.time.Hours;
 import org.joda.time.LocalTime;
 import org.joda.time.Minutes;
@@ -81,9 +82,11 @@ public class TimeWindowFeatureFilter extends FeatureFilter implements StaticData
     }
 
     @Override
-    public void dial(ContextualMessage message) {
-        Dial dial = message.getConfiguration().getDataStore().getFilterDial(message.getExecutionContext().getFeatureName(), this);
-        DialHelper helper = new DialHelper(dial);
+    public void dial(ContextualMessage message, String filterName) {
+        FeatureModel feature = message.getFeature();
+        FilterModel filter = feature.getFilter(filterName);
+
+        DialHelper helper = new DialHelper(filter.getDial());
 
         String dialPattern = helper.getDialPattern(message);
         TimeWindowPattern timeToAdd = consumeDialPattern(dialPattern);
@@ -94,17 +97,16 @@ public class TimeWindowFeatureFilter extends FeatureFilter implements StaticData
 
             calculateNewTimes(timeToAdd);
 
-            message.getConfiguration().getDataStore().updateStaticData(dial.getFeatureFilterId(), START_TIME,
+            message.performDialAdjustment(feature.getFeatureName(), filterName, START_TIME,
                     DateTimeFormat.forPattern("HH:mm:ss").print(startTime));
-            message.getConfiguration().getDataStore().updateStaticData(dial.getFeatureFilterId(), END_TIME,
+            message.performDialAdjustment(feature.getFeatureName(), filterName, END_TIME,
                     DateTimeFormat.forPattern("HH:mm:ss").print(startTime.plusMinutes(timeWindowInMinutes)));
-            message.getConfiguration().getDataStore().registerDialAttempt(dial.getFeatureFilterId());
 
             message.getExecutionContext().addExecutionStep("Dial successfully executed. New start time is "
                     + startTime + " new end time is " + startTime.plusMinutes(timeWindowInMinutes));
 
             if (startTime.toDateTimeToday().isAfter(startTime.plusMinutes(timeWindowInMinutes).toDateTimeToday())) {
-                message.getConfiguration().getDataStore().disableFeature(message.getExecutionContext().getFeatureName());
+                message.disableFeature(feature.getFeatureName());
                 message.getExecutionContext().addExecutionStep("Start time is now after end time, disabling feature.");
             }
         }

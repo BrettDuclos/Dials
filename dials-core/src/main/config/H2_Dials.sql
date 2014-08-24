@@ -7,11 +7,11 @@ CREATE TABLE dials_feature(
 
 
 CREATE TABLE dials_feature_execution(
-    execution_id INT IDENTITY  PRIMARY KEY,
+    feature_execution_id INT IDENTITY  PRIMARY KEY,
     feature_id INT,
-    attempts INT,
-    executions INT,
-    errors INT
+    attempts INT DEFAULT 0 not null,
+    executions INT DEFAULT 0 not null,
+    errors INT DEFAULT 0 not null
 );   
 
 
@@ -23,19 +23,21 @@ CREATE TABLE dials_feature_filter(
 
 
 CREATE TABLE dials_feature_filter_static_data(
+    feature_filter_static_data_id INT IDENTITY PRIMARY KEY,
     feature_filter_id INT,
-    data_key VARCHAR(128),
-    data_value VARCHAR(256)
+    data_key VARCHAR(128) not null,
+    data_value VARCHAR(256) not null
 );               
 
 CREATE TABLE dials_feature_filter_dial(
-    FEATURE_FILTER_ID INT NOT NULL PRIMARY KEY,
-    FREQUENCY INT NOT NULL,
-    ATTEMPTS INT DEFAULT 0 NOT NULL,
-    INCREASE_THRESHOLD INT,
-    INCREASE_PATTERN VARCHAR(128),
-    DECREASE_THRESHOLD INT,
-    DECREASE_PATTERN VARCHAR(128)
+    feature_filter_dial_id INT IDENTITY PRIMARY KEY,
+    feature_filter_id INT NOT NULL,
+    frequency INT NOT NULL,
+    attempts INT DEFAULT 0 NOT NULL,
+    increase_threshold INT,
+    increase_pattern VARCHAR(128),
+    decrease_threshold INT,
+    decrease_pattern VARCHAR(128)
 );  
 
 ALTER TABLE dials_feature_execution ADD CONSTRAINT FK_Dials_Feature_Execution_Dials_Feature FOREIGN KEY(feature_id) REFERENCES dials_feature(feature_id);              

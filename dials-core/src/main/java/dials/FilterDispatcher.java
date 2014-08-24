@@ -45,7 +45,6 @@ public class FilterDispatcher extends UntypedActor {
             if (failed && failFast) {
                 message.getExecutionContext().addExecutionStep("Filter Dispatcher Failed Fast");
                 sendResult(new FilterDispatchResultMessage(false, message));
-                return;
             } else {
                 if (++responseCount == filterCount) {
                     sendResult(new FilterDispatchResultMessage(!failed, message));
