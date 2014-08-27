@@ -74,7 +74,7 @@ public class FilterModel implements Serializable {
     @Transient
     public void updateStaticData(String key, String value) {
         for (FilterStaticDataModel staticData : getStaticData()) {
-            if (staticData.getDataKey().equals(key)) {
+            if (staticData.getDataKey().equalsIgnoreCase(key)) {
                 staticData.setDataValue(value);
             }
         }

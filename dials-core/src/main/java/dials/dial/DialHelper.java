@@ -8,6 +8,8 @@ import java.math.BigDecimal;
 
 public class DialHelper {
 
+    public static String ATTEMPTED = "attempted";
+
     private FilterDialModel dial;
 
     public DialHelper(FilterDialModel dial) {
@@ -21,11 +23,17 @@ public class DialHelper {
             if (tuple != null) {
                 String dialIncreaseResult = determineDialIncreaseEligibility(dial, tuple, message);
 
-                if (dialIncreaseResult.equals("")) {
-                    return determineDialDecreaseEligibility(dial, tuple, message);
-                } else {
+                if (!dialIncreaseResult.equals("")) {
                     return dialIncreaseResult;
                 }
+
+                String dialDecreaseResult = determineDialDecreaseEligibility(dial, tuple, message);
+
+                if (!dialDecreaseResult.equals("")) {
+                    return dialDecreaseResult;
+                }
+
+                return ATTEMPTED;
             }
         }
 

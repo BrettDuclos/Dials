@@ -64,16 +64,23 @@ public class DateRangeFeatureFilter extends FeatureFilter implements StaticDataF
         DialHelper helper = new DialHelper(feature.getFilter(filterName).getDial());
 
         String dialPattern = helper.getDialPattern(message);
+
+        if (dialPattern.equals(DialHelper.ATTEMPTED)) {
+            message.performDialAdjustment(feature.getFeatureName(), filterName, END_DATE,
+                    DateTimeFormat.forPattern("yyyy-MM-dd").print(endDate));
+            return;
+        }
+
         Integer daysToAdd = consumeDialPattern(dialPattern);
 
         if (daysToAdd != null) {
             message.getExecutionContext().addExecutionStep("Dial with pattern " + dialPattern
                     + " performed on " + getClass().getSimpleName());
 
-            DateTime newEndDate = endDate.plusDays(daysToAdd);
+            endDate = endDate.plusDays(daysToAdd);
 
             message.performDialAdjustment(feature.getFeatureName(), filterName, END_DATE,
-                    DateTimeFormat.forPattern("yyyy-MM-dd").print(newEndDate));
+                    DateTimeFormat.forPattern("yyyy-MM-dd").print(endDate));
 
             message.getExecutionContext().addExecutionStep("Dial successfully executed. New end date is " + endDate);
 

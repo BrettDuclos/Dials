@@ -89,6 +89,14 @@ public class TimeWindowFeatureFilter extends FeatureFilter implements StaticData
         DialHelper helper = new DialHelper(filter.getDial());
 
         String dialPattern = helper.getDialPattern(message);
+        if (dialPattern.equals(DialHelper.ATTEMPTED)) {
+            message.performDialAdjustment(feature.getFeatureName(), filterName, START_TIME,
+                    DateTimeFormat.forPattern("HH:mm:ss").print(startTime));
+            message.performDialAdjustment(feature.getFeatureName(), filterName, END_TIME,
+                    DateTimeFormat.forPattern("HH:mm:ss").print(startTime.plusMinutes(timeWindowInMinutes)));
+            return;
+        }
+
         TimeWindowPattern timeToAdd = consumeDialPattern(dialPattern);
 
         if (timeToAdd != null) {

@@ -66,6 +66,12 @@ public class PercentageFeatureFilter extends FeatureFilter implements StaticData
         DialHelper helper = new DialHelper(filter.getDial());
 
         String dialPattern = helper.getDialPattern(message);
+
+        if (dialPattern.equals(DialHelper.ATTEMPTED)) {
+            message.performDialAdjustment(feature.getFeatureName(), filterName, PERCENTAGE, percentage.toString());
+            return;
+        }
+
         Integer dialAmount = consumeDialPattern(dialPattern);
 
         if (dialAmount != null) {
@@ -81,8 +87,6 @@ public class PercentageFeatureFilter extends FeatureFilter implements StaticData
             }
 
             message.performDialAdjustment(feature.getFeatureName(), filterName, PERCENTAGE, percentage.toString());
-
-
             message.getExecutionContext().addExecutionStep("Dial successfully executed. New percentage is " + percentage);
 
             if (percentage == MIN_PERCENTAGE) {
