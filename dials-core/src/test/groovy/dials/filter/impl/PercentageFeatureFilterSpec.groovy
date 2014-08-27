@@ -41,4 +41,24 @@ abstract class PercentageFeatureFilterSpec extends AbstractFeatureFilterSpec {
         null    | null
     }
 
+    def "Validate Percentage Adjustment"() {
+        setup:
+        staticData.addDataObject(PercentageFeatureFilter.PERCENTAGE, percentage)
+        TestActorRef<PercentageFeatureFilter> actorRef = TestActorRef.create(system, Props.create(PercentageFeatureFilter.class))
+        actorRef.underlyingActor().applyStaticData(new StaticDataFilterApplicationMessage(staticData, message))
+        actorRef.underlyingActor().adjustPercentage(adjustment)
+
+        expect:
+        actorRef.underlyingActor().getPercentage() == expectedResult
+
+        where:
+        percentage | adjustment | expectedResult
+        50         | 5          | 55
+        50         | -5         | 45
+        50         | 51         | 100
+        50         | -51        | 0
+        0          | -1         | 0
+        100        | 1          | 100
+    }
+
 }

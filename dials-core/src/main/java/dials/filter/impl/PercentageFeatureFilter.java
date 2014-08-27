@@ -78,13 +78,7 @@ public class PercentageFeatureFilter extends FeatureFilter implements StaticData
             message.getExecutionContext().addExecutionStep("Dial with pattern "
                     + dialPattern + " performed on " + getClass().getSimpleName());
 
-            if (dialAmount > MIN_PERCENTAGE && percentage + dialAmount >= MAX_PERCENTAGE) {
-                percentage = MAX_PERCENTAGE;
-            } else if (dialAmount < MIN_PERCENTAGE && percentage - dialAmount <= MIN_PERCENTAGE) {
-                percentage = MIN_PERCENTAGE;
-            } else {
-                percentage += dialAmount;
-            }
+            adjustPercentage(dialAmount);
 
             message.performDialAdjustment(feature.getFeatureName(), filterName, PERCENTAGE, percentage.toString());
             message.getExecutionContext().addExecutionStep("Dial successfully executed. New percentage is " + percentage);
@@ -94,6 +88,20 @@ public class PercentageFeatureFilter extends FeatureFilter implements StaticData
                 message.getExecutionContext().addExecutionStep("Percentage has reached 0, disabling feature.");
             }
         }
+    }
+
+    protected void adjustPercentage(Integer dialAmount) {
+        if (percentage + dialAmount >= MAX_PERCENTAGE) {
+            percentage = MAX_PERCENTAGE;
+        } else if (percentage + dialAmount <= MIN_PERCENTAGE) {
+            percentage = MIN_PERCENTAGE;
+        } else {
+            percentage += dialAmount;
+        }
+    }
+
+    protected int getPercentage() {
+        return percentage;
     }
 
     /**

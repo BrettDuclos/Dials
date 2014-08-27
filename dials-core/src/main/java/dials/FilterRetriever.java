@@ -49,28 +49,33 @@ public class FilterRetriever extends UntypedActor {
             if (filterClass != null) {
                 resultMessage.getExecutionContext().addExecutionStep("Detected Filter - " + filterClass.getSimpleName());
 
-                ActorRef filterActor = context().actorOf(Props.create(filterClass));
-
-                if (StaticDataFilter.class.isAssignableFrom(filterClass)) {
-                    filterActor.tell(new StaticDataFilterApplicationMessage(staticData, resultMessage), self());
-                }
-
-                if (DynamicDataFilter.class.isAssignableFrom(filterClass)) {
-                    filterActor.tell(new DynamicDataFilterApplicationMessage(message.getDynamicData(), resultMessage), self());
-                }
-
-                if (Dialable.class.isAssignableFrom(filterClass)) {
-                    if (filter.getDial() != null) {
-                        filterActor.tell(new DialableFilterApplicationMessage(message, filter.getFilterName()), self());
-                    }
-                }
-
-                resultMessage.addFilter(filterActor);
+                configureFilter(message, resultMessage, filter, staticData, filterClass);
             } else {
                 resultMessage.getExecutionContext().addExecutionStep("Detected Unknown Filter - " + filter.getFilterName());
             }
         }
         return resultMessage;
+    }
+
+    private void configureFilter(FilterRetrievalRequestMessage message, FilterRetrievalResultMessage resultMessage, FilterModel filter,
+                                 FilterData staticData, Class filterClass) {
+        ActorRef filterActor = context().actorOf(Props.create(filterClass));
+
+        if (StaticDataFilter.class.isAssignableFrom(filterClass)) {
+            filterActor.tell(new StaticDataFilterApplicationMessage(staticData, resultMessage), self());
+        }
+
+        if (DynamicDataFilter.class.isAssignableFrom(filterClass)) {
+            filterActor.tell(new DynamicDataFilterApplicationMessage(message.getDynamicData(), resultMessage), self());
+        }
+
+        if (Dialable.class.isAssignableFrom(filterClass)) {
+            if (filter.getDial() != null) {
+                filterActor.tell(new DialableFilterApplicationMessage(message, filter.getFilterName()), self());
+            }
+        }
+
+        resultMessage.addFilter(filterActor);
     }
 
     private Class getClassForFilter(ContextualMessage message, String filterName) {

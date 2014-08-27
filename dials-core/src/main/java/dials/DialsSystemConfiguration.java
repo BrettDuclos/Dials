@@ -50,10 +50,12 @@ public class DialsSystemConfiguration {
         }
 
         if (executionContextRecorder == null) {
+            logger.warn("No ExecutionContextRecorder supplied, defaulting to NoopExecutionContextRecorder.");
             executionContextRecorder = new NoopExecutionContextRecorder();
         }
 
         if (metricRegistry == null) {
+            logger.warn("No MetricRegistry supplied, defaulting to JMX.");
             metricRegistry = new MetricRegistry();
             metricReporter = JmxReporter.forRegistry(metricRegistry).inDomain("Dials").build();
             metricReporter.start();
