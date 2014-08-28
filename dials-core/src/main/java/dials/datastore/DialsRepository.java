@@ -5,8 +5,14 @@ import com.hazelcast.core.IMap;
 import dials.model.FeatureExecutionModel;
 import dials.model.FeatureModel;
 import dials.model.FilterModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.math.BigDecimal;
 
 public class DialsRepository implements FeatureManipulationActions {
+
+    private Logger logger = LoggerFactory.getLogger(DialsRepository.class);
 
     private IMap<String, FeatureModel> featureMap;
 
@@ -42,7 +48,15 @@ public class DialsRepository implements FeatureManipulationActions {
     public void registerFeatureError(String featureName) {
         FeatureModel feature = getFeature(featureName);
         if (feature != null) {
-            getExecution(feature).registerError();
+            FeatureExecutionModel execution = getExecution(feature);
+            execution.registerError();
+            CountTuple tuple = new CountTuple(execution.getExecutions(), execution.getErrors());
+
+            if (tuple.getRateOfSuccess().compareTo(new BigDecimal(feature.getKillswitchThreshold())) < 0) {
+                logger.warn("Feature fell below Killswitch Threshold. Disabling.");
+                feature.setIsEnabled(false);
+            }
+
             putFeature(feature);
         }
     }
