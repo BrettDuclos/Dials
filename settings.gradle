@@ -1,3 +1,1 @@
-rootProject.name = 'dials'
-
-include 'dials-core', 'dials-dropwizard-server', 'dials-dropwizard-api', 'dials-dropwizard-client'
+include 'dials-core', 'dials-server', 'dials-api', 'dials-client'

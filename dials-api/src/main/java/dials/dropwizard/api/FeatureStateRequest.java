@@ -7,6 +7,7 @@ public class FeatureStateRequest {
     private FilterData data;
 
     public FeatureStateRequest() {
+
     }
 
     public FeatureStateRequest(FilterData data) {

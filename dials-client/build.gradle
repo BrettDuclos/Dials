@@ -1,5 +1,5 @@
 dependencies {
-    compile project(':dials-dropwizard-api')
+    compile project(':dials-api')
     compile project(':dials-core')
     compile "com.sun.jersey.contribs:jersey-apache-client4:1.18.1"
     compile "com.sun.jersey:jersey-client:1.18.1"

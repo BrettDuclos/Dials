@@ -6,6 +6,8 @@ import java.util.Map;
 
 public class FilterData {
 
+    public static FilterData EMPTY_FILTER_DATA = new FilterData();
+
     private Map<String, Object> dataObjects;
 
     public FilterData() {

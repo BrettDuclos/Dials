@@ -32,7 +32,8 @@ public class DialsApplication extends Application<DialsApplicationConfiguration>
     }
 
     private void initializeDials(EntityManagerFactory entityManagerFactory) throws ClassNotFoundException {
-        ExecutionContextRecorder contextRecorder = new LoggingBasedExecutionContextRecorder(LoggingBasedExecutionContextRecorder.INFO);
+        ExecutionContextRecorder contextRecorder =
+                new LoggingBasedExecutionContextRecorder(LoggingBasedExecutionContextRecorder.INFO);
         DialsSystemInitializer.getInstance().withEntityManagerFactory(entityManagerFactory)
                 .withExecutionContextRecorder(contextRecorder).withFailFastEnabled(true).initializeSystem();
     }

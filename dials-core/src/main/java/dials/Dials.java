@@ -43,7 +43,7 @@ public class Dials {
     }
 
     public static boolean getState(String featureName) {
-        return getState(featureName, new FilterData());
+        return getState(featureName, FilterData.EMPTY_FILTER_DATA);
     }
 
     public static boolean getState(final String featureName, FilterData dynamicData) {
@@ -52,38 +52,22 @@ public class Dials {
             return false;
         }
 
-        systemConfiguration.getMetricRegistry().meter(name("Dials", featureName, "RequestAttemptMeter")).mark();
+        markMeter(name("Dials", featureName, "RequestAttemptMeter"));
 
         Timer.Context timer = systemConfiguration.getMetricRegistry()
                 .timer(name("Dials", featureName, "RequestTimer")).time();
 
         FeatureModel feature = getFeature(featureName);
 
-        if (feature == null) {
+        if (meetsFeatureStateRequestPrerequisites(feature)) {
+            boolean state = performFeatureStateRequest(featureName, dynamicData);
+
             timer.stop();
-            return false;
+            return state;
         }
-
-        if (!feature.getIsEnabled()) {
-            logger.warn("Requested feature is disabled.");
-            timer.stop();
-            return false;
-        }
-
-        Inbox inbox = Inbox.create(system);
-        ActorRef dispatcher = getNewDialsDispatcher();
-        sendFeatureStateRequest(inbox, featureName, dynamicData, dispatcher);
-
-        boolean state = getFeatureStateResult(inbox);
-
-        inbox.send(dispatcher, PoisonPill.getInstance());
 
         timer.stop();
-
-        if (state) {
-            systemConfiguration.getMetricRegistry().meter(name("Dials", featureName, "RequestExecutionMeter")).mark();
-        }
-        return state;
+        return false;
     }
 
     private static FeatureModel getFeature(String featureName) {
@@ -96,6 +80,35 @@ public class Dials {
         }
 
         return feature;
+    }
+
+    private static boolean meetsFeatureStateRequestPrerequisites(FeatureModel feature) {
+        if (feature == null) {
+            return false;
+        }
+
+        if (!feature.getIsEnabled()) {
+            logger.warn("Requested feature is disabled.");
+            return false;
+        }
+
+        return true;
+    }
+
+    private static boolean performFeatureStateRequest(String featureName, FilterData dynamicData) {
+        Inbox inbox = Inbox.create(system);
+        ActorRef dispatcher = getNewDialsDispatcher();
+        sendFeatureStateRequest(inbox, featureName, dynamicData, dispatcher);
+
+        boolean state = getFeatureStateResult(inbox);
+
+        inbox.send(dispatcher, PoisonPill.getInstance());
+
+        if (state) {
+            markMeter(name("Dials", featureName, "RequestExecutionMeter"));
+        }
+
+        return state;
     }
 
     private static void sendFeatureStateRequest(Inbox inbox, String featureName, FilterData dynamicData, ActorRef dispatcher) {
@@ -112,11 +125,12 @@ public class Dials {
         } catch (Exception e) {
             logger.warn("System timed out calculating feature state, will return false.");
         }
+
         return state;
     }
 
     public static void sendError(String featureName) {
-        systemConfiguration.getMetricRegistry().meter(name("Dials", featureName, "RequestErrorMeter")).mark();
+        markMeter(name("Dials", featureName, "RequestErrorMeter"));
         systemConfiguration.getRepository().registerFeatureError(featureName);
     }
 
@@ -126,6 +140,10 @@ public class Dials {
 
     public static void shutdown() {
         system.shutdown();
+    }
+
+    private static void markMeter(String meter) {
+        systemConfiguration.getMetricRegistry().meter(meter).mark();
     }
 
 }

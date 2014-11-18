@@ -33,25 +33,35 @@ public class DialsMapStore implements MapStore<String, FeatureModel> {
     @Override
     public void delete(String key) {
         entityManagerHelper.getEntityManager().getTransaction().begin();
-        Query query = entityManagerHelper.getEntityManager().createQuery("delete from FeatureModel where featureName = :featureName")
+
+        Query query = entityManagerHelper.getEntityManager()
+                .createQuery("delete from FeatureModel where featureName = :featureName")
                 .setParameter("featureName", key);
+
         query.executeUpdate();
+
         entityManagerHelper.getEntityManager().getTransaction().commit();
     }
 
     @Override
     public void deleteAll(Collection<String> keys) {
         entityManagerHelper.getEntityManager().getTransaction().begin();
-        Query query = entityManagerHelper.getEntityManager().createQuery("delete from FeatureModel");
+
+        Query query = entityManagerHelper.getEntityManager()
+                .createQuery("delete from FeatureModel");
+
         query.executeUpdate();
+
         entityManagerHelper.getEntityManager().getTransaction().commit();
     }
 
     @Override
     public FeatureModel load(String key) {
         TypedQuery<FeatureModel> query =
-                entityManagerHelper.getEntityManager().createQuery("from FeatureModel where feature_name = :featureName",
-                        FeatureModel.class).setParameter("featureName", key).setMaxResults(1);
+                entityManagerHelper.getEntityManager()
+                        .createQuery("from FeatureModel where feature_name = :featureName", FeatureModel.class)
+                        .setParameter("featureName", key)
+                        .setMaxResults(1);
 
         try {
             return query.getSingleResult();
@@ -64,7 +74,9 @@ public class DialsMapStore implements MapStore<String, FeatureModel> {
     public Map<String, FeatureModel> loadAll(Collection<String> keys) {
         Map<String, FeatureModel> models = new HashMap<>();
 
-        TypedQuery<FeatureModel> query = entityManagerHelper.getEntityManager().createQuery("from FeatureModel", FeatureModel.class);
+        TypedQuery<FeatureModel> query = entityManagerHelper.getEntityManager()
+                .createQuery("from FeatureModel", FeatureModel.class);
+
         for (FeatureModel feature : query.getResultList()) {
             models.put(feature.getFeatureName(), feature);
         }
@@ -75,7 +87,10 @@ public class DialsMapStore implements MapStore<String, FeatureModel> {
     @Override
     public Set<String> loadAllKeys() {
         Set<String> keys = new HashSet<>();
-        TypedQuery<String> query = entityManagerHelper.getEntityManager().createQuery("select featureName from FeatureModel", String.class);
+
+        TypedQuery<String> query = entityManagerHelper.getEntityManager()
+                .createQuery("select featureName from FeatureModel", String.class);
+
         keys.addAll(query.getResultList());
 
         return keys;
