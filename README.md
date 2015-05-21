@@ -17,3 +17,4 @@ When a feature executes, the client can register back to the system that it has 
 With this, we can calculate the rate of success for a feature. 
 By defining an 'Increase Threshold' and a 'Decrease Threshold', a given filter can automatically be dialed up or down based on the configuration provided, thus the name Dials. 
 This functionality is available in percentage, date range, and time window filters.
+ 
